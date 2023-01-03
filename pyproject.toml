@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "ml-reproducibility-challenge-2022"
+version = "0.1.0"
+description = "Code for reproducing the experiments of 'If You Like Shapley Then You’ll Love the Core'"
+authors = ["appliedAI gGmbH"]
+readme = "README.md"
+packages = [{include = "experiments", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "~3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+# Black-compatible settings for isort
+# See https://black.readthedocs.io/en/stable/compatible_configs.html
+[tool.isort]
+profile = "black"
