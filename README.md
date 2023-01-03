@@ -22,3 +22,11 @@ You can then activate the virtual environment using:
 ```shell
 poetry shell
 ```
+
+# Contributing
+
+Make sure to install the pre-commit hooks:
+
+```shell
+pre-commit install
+```
