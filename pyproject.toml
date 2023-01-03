@@ -15,7 +15,7 @@ torch = "^1.13.1"
 tqdm = "^4.64.1"
 notebook = "^6.5.2"
 ipywidgets = "^8.0.4"
-pyDVL = "^0.3.0"
+pydvl = {git = "https://github.com/appliedAI-Initiative/pyDVL", rev = "71378b83d253a226fda85c9efa5417c13dd3b663"}
 
 
 [tool.poetry.group.dev.dependencies]
