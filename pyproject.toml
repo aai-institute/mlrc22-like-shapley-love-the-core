@@ -17,6 +17,7 @@ notebook = "^6.5.2"
 ipywidgets = "^8.0.4"
 pydvl = {git = "https://github.com/appliedAI-Initiative/pyDVL", rev = "6c1f2d94122ddbccc09f7231946355ff8de78197"}
 matplotlib = "^3.6.2"
+seaborn = "^0.12.2"
 
 
 [tool.poetry.group.dev.dependencies]
