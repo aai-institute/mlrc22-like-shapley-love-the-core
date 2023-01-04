@@ -1171,8 +1171,8 @@ influence = ["torch"]
 [package.source]
 type = "git"
 url = "https://github.com/appliedAI-Initiative/pyDVL"
-reference = "71378b83d253a226fda85c9efa5417c13dd3b663"
-resolved_reference = "71378b83d253a226fda85c9efa5417c13dd3b663"
+reference = "6c1f2d94122ddbccc09f7231946355ff8de78197"
+resolved_reference = "6c1f2d94122ddbccc09f7231946355ff8de78197"
 
 [[package]]
 name = "Pygments"
@@ -1680,7 +1680,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.10"
-content-hash = "6c400ec1c6adaba796683d2e0d614ea14b320edf18808e957f6a4cf5df6543e3"
+content-hash = "46bf007550a6c041f9a38489db1a5e427c2987037a846b2ed62bde7a9aa39e77"
 
 [metadata.files]
 aiosignal = [
