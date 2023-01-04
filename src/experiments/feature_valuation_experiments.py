@@ -12,7 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from tqdm.auto import tqdm
 from tqdm.contrib.logging import tqdm_logging_redirect
 
-from experiments.constants import RANDOM_SEED
+from experiments.constants import OUTPUT_DIR, RANDOM_SEED
 from experiments.utils import (
     create_breast_cancer_dataset,
     create_house_voting_dataset,
@@ -27,7 +27,10 @@ logging.basicConfig(
 )
 
 sns.set_theme(style="whitegrid", palette="pastel")
-sns.set_context("poster")
+sns.set_context("paper", font_scale=1.5)
+
+EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "feature_valuation"
+EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 
 
 def run():
@@ -42,23 +45,25 @@ def run():
         else:
             dataset = create_breast_cancer_dataset()
 
-        logger.info(f"Size of dataset's training set: {len(dataset)}")
+        logger.info(f"Number of features in dataset: {len(dataset)}")
         powerset_size = 2 ** len(dataset)
 
         logger.info("Creating utility")
         utility = Utility(
             data=dataset,
-            model=LogisticRegression(random_state=RANDOM_SEED),
+            model=LogisticRegression(max_iter=1000),
             enable_cache=False,
         )
 
         logger.info("Computing exact Least Core values")
-        exact_values = exact_least_core(utility, progress=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ConvergenceWarning)
+            exact_values = exact_least_core(utility, progress=True)
 
         logger.info(
             "Computing estimated Least Core values using fractions of the number of subsets"
         )
-        fractions = [0.02, 0.05, 0.075, 0.1, 0.15]
+        fractions = [0.01, 0.02, 0.05, 0.075, 0.1, 0.15]
 
         estimated_values = {fraction: [] for fraction in fractions}
 
@@ -73,10 +78,16 @@ def run():
                         f"Using number of iterations {max_iterations} for fraction {fraction}"
                     )
                     for _ in range(n_repetitions):
-                        values = montecarlo_least_core(
-                            utility, max_iterations=max_iterations
-                        )
-                        estimated_values[fraction].append(values)
+                        try:
+                            values = montecarlo_least_core(
+                                utility, max_iterations=max_iterations
+                            )
+                        except ValueError:
+                            values = np.empty(len(dataset))
+                            values[:] = np.nan
+                            estimated_values[fraction].append(values)
+                        else:
+                            estimated_values[fraction].append(values)
 
         # This is inspired the code in pyDVL's exact_least_core() function
         # This creates the components of the following inequality:
@@ -92,7 +103,9 @@ def run():
                 total=powerset_size,
                 desc="Subsets",
             ):
-                utility_values[i] = utility(subset)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=ConvergenceWarning)
+                    utility_values[i] = utility(subset)
                 indices = np.zeros(len(dataset) + 1, dtype=bool)
                 indices[list(subset)] = True
                 constraints[i, indices] = 1
@@ -101,9 +114,10 @@ def run():
 
         for fraction, values_list in estimated_values.items():
             for values in values_list:
-                sorted_results = sorted(values, key=lambda x: x.index)
+                sorted_results = sorted(values, key=lambda x: getattr(x, "index", 0))
                 sorted_values = np.array(
-                    [x.value for x in sorted_results] + [exact_values.least_core_value]
+                    [getattr(x, "value", x) for x in sorted_results]
+                    + [exact_values.least_core_value]
                 )
                 left_hand_side = constraints @ sorted_values
                 accuracy = np.mean(left_hand_side >= utility_values)
@@ -116,6 +130,8 @@ def run():
                 )
 
     accuracies_df = pd.DataFrame(accuracies)
+
+    accuracies_df.to_csv(EXPERIMENT_OUTPUT_DIR / "accuracies.csv", index=False)
 
     fig, ax = plt.subplots()
     sns.barplot(
@@ -131,15 +147,19 @@ def run():
         },
         ax=ax,
     )
-    sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
-    """
-    ax.set_title(
-        "Least core accuracy \n(satisfaction of the core constraint) \nover coalitions"
+    sns.move_legend(
+        ax,
+        "lower center",
+        bbox_to_anchor=(0.5, 1),
+        ncol=3,
+        title=None,
+        frameon=False,
     )
-    """
+    ax.set_ylim(0.0, 1.1)
     ax.set_xlabel("Fraction of Samples")
     ax.set_ylabel("Accuracy")
-    plt.show()
+    fig.tight_layout()
+    fig.savefig(EXPERIMENT_OUTPUT_DIR / "least_core_accuracy_over_coalitions.eps")
 
 
 if __name__ == "__main__":
