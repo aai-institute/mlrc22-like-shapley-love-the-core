@@ -2,8 +2,6 @@ from typing import Iterable
 
 import numpy as np
 from pydvl.utils.dataset import Dataset
-from sklearn.model_selection import train_test_split
-from sklearn.utils import Bunch
 
 __all__ = ["FeatureValuationDataset"]
 
