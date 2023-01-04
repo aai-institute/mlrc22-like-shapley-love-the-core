@@ -30,28 +30,5 @@ class FeatureValuationDataset(Dataset):
         y = self.y_train
         return x, y
 
-    @classmethod
-    def from_sklearn(
-        cls,
-        data: Bunch,
-        train_size: float = 0.8,
-        random_state: int | None = None,
-        stratify_by_target: bool = False,
-    ) -> "FeatureValuationDataset":
-        """TODO: Remove this method once version 0.4.0 of pyDVL is released."""
-        x_train, x_test, y_train, y_test = train_test_split(
-            data.data,
-            data.target,
-            train_size=train_size,
-            random_state=random_state,
-            stratify=data.target if stratify_by_target else None,
-        )
-        return cls(
-            x_train,
-            y_train,
-            x_test,
-            y_test,
-            feature_names=data.get("feature_names"),
-            target_names=data.get("target_names"),
-            description=data.get("DESCR"),
-        )
+    def __len__(self):
+        return self.x_train.shape[1]
