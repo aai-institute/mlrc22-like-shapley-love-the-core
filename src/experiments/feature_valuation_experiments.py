@@ -1,5 +1,4 @@
 import logging
-import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,6 +8,8 @@ from pydvl.utils import Utility, powerset
 from pydvl.value.least_core import exact_least_core, montecarlo_least_core
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 from tqdm.auto import tqdm
 from tqdm.contrib.logging import tqdm_logging_redirect
 
@@ -36,29 +37,31 @@ EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 def run():
     accuracies = []
 
-    for dataset_name in ["House", "Medical", "Chemical"]:
+    for dataset_name in ["Chemical", "House", "Medical"]:
         logger.info(f"Creating dataset '{dataset_name}")
-        if dataset_name == "House":
-            dataset = create_house_voting_dataset()
-        elif dataset_name == "Chemical":
+        if dataset_name == "Chemical":
             dataset = create_wine_dataset()
-        else:
+        elif dataset_name == "House":
+            dataset = create_house_voting_dataset()
+        elif dataset_name == "Medical":
             dataset = create_breast_cancer_dataset()
+        else:
+            raise ValueError(f"Unknown dataset '{dataset_name}'")
 
         logger.info(f"Number of features in dataset: {len(dataset)}")
         powerset_size = 2 ** len(dataset)
 
+        model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
+
         logger.info("Creating utility")
         utility = Utility(
             data=dataset,
-            model=LogisticRegression(max_iter=1000),
+            model=model,
             enable_cache=False,
         )
 
         logger.info("Computing exact Least Core values")
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ConvergenceWarning)
-            exact_values = exact_least_core(utility, progress=True)
+        exact_values = exact_least_core(utility, progress=True)
 
         logger.info(
             "Computing estimated Least Core values using fractions of the number of subsets"
@@ -70,24 +73,25 @@ def run():
         n_repetitions = 10
 
         with tqdm_logging_redirect():
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=ConvergenceWarning)
-                for fraction in tqdm(fractions, desc="Fractions"):
-                    max_iterations = int(fraction * (2 ** len(dataset)))
-                    logger.info(
-                        f"Using number of iterations {max_iterations} for fraction {fraction}"
-                    )
-                    for _ in range(n_repetitions):
-                        try:
-                            values = montecarlo_least_core(
-                                utility, max_iterations=max_iterations
-                            )
-                        except ValueError:
-                            values = np.empty(len(dataset))
-                            values[:] = np.nan
-                            estimated_values[fraction].append(values)
-                        else:
-                            estimated_values[fraction].append(values)
+            for fraction in tqdm(fractions, desc="Fractions"):
+                max_iterations = int(fraction * (2 ** len(dataset)))
+                logger.info(
+                    f"Using number of iterations {max_iterations} for fraction {fraction}"
+                )
+                for _ in range(n_repetitions):
+                    try:
+                        values = montecarlo_least_core(
+                            utility,
+                            epsilon=0.0,
+                            max_iterations=max_iterations,
+                            n_jobs=4,
+                        )
+                    except ValueError:
+                        values = np.empty(len(dataset))
+                        values[:] = np.nan
+                        estimated_values[fraction].append(values)
+                    else:
+                        estimated_values[fraction].append(values)
 
         # This is inspired the code in pyDVL's exact_least_core() function
         # This creates the components of the following inequality:
@@ -103,9 +107,7 @@ def run():
                 total=powerset_size,
                 desc="Subsets",
             ):
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=ConvergenceWarning)
-                    utility_values[i] = utility(subset)
+                utility_values[i] = utility(subset)
                 indices = np.zeros(len(dataset) + 1, dtype=bool)
                 indices[list(subset)] = True
                 constraints[i, indices] = 1
@@ -139,7 +141,6 @@ def run():
         x="fraction",
         y="accuracy",
         hue="dataset",
-        errorbar="sd",
         palette={
             "House": "indianred",
             "Medical": "darkorchid",
