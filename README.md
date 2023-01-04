@@ -23,6 +23,14 @@ You can then activate the virtual environment using:
 poetry shell
 ```
 
+# Experiments
+
+## Feature Valuation
+
+```shell
+python -m experiments.feature_valuation_experiments
+```
+
 # Contributing
 
 Make sure to install the pre-commit hooks:
