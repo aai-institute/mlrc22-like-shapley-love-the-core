@@ -37,16 +37,16 @@ EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 def run():
     accuracies = []
 
-    for dataset_name in ["Chemical", "House", "Medical"]:
-        logger.info(f"Creating dataset '{dataset_name}")
-        if dataset_name == "Chemical":
-            dataset = create_wine_dataset()
-        elif dataset_name == "House":
+    for dataset_name in ["House", "Medical", "Chemical"]:
+        if dataset_name == "House":
             dataset = create_house_voting_dataset()
         elif dataset_name == "Medical":
             dataset = create_breast_cancer_dataset()
+        elif dataset_name == "Chemical":
+            dataset = create_wine_dataset()
         else:
             raise ValueError(f"Unknown dataset '{dataset_name}'")
+        logger.info(f"Creating dataset '{dataset_name}")
 
         logger.info(f"Number of features in dataset: {len(dataset)}")
         powerset_size = 2 ** len(dataset)
