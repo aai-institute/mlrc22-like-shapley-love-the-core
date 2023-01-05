@@ -1,0 +1,35 @@
+services:
+  ray-head:
+    image: "rayproject/ray:2.2.0-py310-cpu"
+    ports:
+    - 8080:8080
+    - 10001:10001
+    command: 
+    - ray
+    - start
+    - --head
+    - --port=6379
+    - --include-dashboard=true
+    - --dashboard-port=8080
+    - --dashboard-host=0.0.0.0
+    - --block
+    volumes:
+    - /dev/shm:/dev/shm
+    networks:
+    - cluster
+
+  ray-worker:
+    image: "rayproject/ray:2.2.0-py310-cpu"
+    command:
+    - ray
+    - start
+    - --address=ray-head:6379
+    - --block
+    depends_on:
+    - ray-head
+    networks:
+    - cluster
+
+
+networks:
+  cluster: {}

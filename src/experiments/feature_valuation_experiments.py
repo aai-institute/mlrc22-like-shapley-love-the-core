@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from pydvl.utils import Utility, powerset
+from pydvl.utils.config import ParallelConfig
 from pydvl.value.least_core import exact_least_core, montecarlo_least_core
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
@@ -34,6 +35,8 @@ EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 
 
 def run():
+    parallel_config = ParallelConfig(address="ray://127.0.0.1:10001")
+
     accuracies = []
 
     for dataset_name in ["House", "Medical", "Chemical"]:
@@ -87,6 +90,7 @@ def run():
                             epsilon=0.0,
                             max_iterations=max_iterations,
                             n_jobs=4,
+                            config=parallel_config,
                         )
                     except ValueError:
                         values = np.empty(len(dataset))
