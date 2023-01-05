@@ -50,7 +50,10 @@ def run():
         logger.info(f"Number of features in dataset: {len(dataset)}")
         powerset_size = 2 ** len(dataset)
 
-        model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
+        model = make_pipeline(
+            StandardScaler(),
+            LogisticRegression(max_iter=1000, random_state=RANDOM_SEED),
+        )
 
         logger.info("Creating utility")
         utility = Utility(
