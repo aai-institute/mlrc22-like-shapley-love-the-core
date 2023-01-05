@@ -23,6 +23,32 @@ You can then activate the virtual environment using:
 poetry shell
 ```
 
+# Experiments
+
+We use [DVC](https://dvc.org/) to run the experiments and track their results.
+
+To reproduce all results use:
+
+```shell
+dvc repro
+```
+
+## Feature Valuation
+
+This experiments uses 3 small scale datasets with a number of features between
+10 and 14. It uses monte carlo least core to compute feature valuations
+and then computes, for a varying number of computational budgets, the percentage
+of all feature coalitions that satisfy the least core constraints with respect
+to the true deficit $e^{*}$ (i.e. the exact least core value).
+
+To reproduce the results of this experiment use:
+
+```shell
+dvc repro feature-valuation
+```
+
+You can find the results under [output/feature_valuation](output/feature_valuation).
+
 # Contributing
 
 Make sure to install the pre-commit hooks:

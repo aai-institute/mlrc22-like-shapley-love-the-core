@@ -1,0 +1,15 @@
+schema: '2.0'
+stages:
+  feature-valuation:
+    cmd: python -m experiments.feature_valuation_experiments
+    deps:
+    - path: src/experiments/feature_valuation_experiments.py
+      md5: 4132eaf9a4b4cc83973b3c8a61aca1a3
+      size: 5764
+    outs:
+    - path: output/feature_valuation/accuracies.csv
+      md5: f1f935409a08b3195d456459f9aceafe
+      size: 4901
+    - path: output/feature_valuation/least_core_accuracy_over_coalitions.eps
+      md5: 4063d438205745191a36dd985208739e
+      size: 25408
