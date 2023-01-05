@@ -6,7 +6,6 @@ import pandas as pd
 import seaborn as sns
 from pydvl.utils import Utility, powerset
 from pydvl.value.least_core import exact_least_core, montecarlo_least_core
-from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
