@@ -13,8 +13,8 @@ from sklearn.preprocessing import StandardScaler
 from tqdm.auto import tqdm
 from tqdm.contrib.logging import tqdm_logging_redirect
 
-from experiments.constants import OUTPUT_DIR, RANDOM_SEED
-from experiments.utils import (
+from ml_reproducibility_challenge.constants import OUTPUT_DIR, RANDOM_SEED
+from ml_reproducibility_challenge.utils import (
     create_breast_cancer_dataset,
     create_house_voting_dataset,
     create_wine_dataset,
