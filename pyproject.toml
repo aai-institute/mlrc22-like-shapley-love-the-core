@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Code for reproducing the experiments of 'If You Like Shapley Then You’ll Love the Core'"
 authors = ["appliedAI gGmbH"]
 readme = "README.md"
-packages = [{include = "experiments", from = "src"}]
+packages = [{include = "ml_reproducibility_challenge", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.10"
@@ -15,15 +15,13 @@ torch = "^1.13.1"
 tqdm = "^4.64.1"
 notebook = "^6.5.2"
 ipywidgets = "^8.0.4"
-pydvl = {version = "0.3.1.dev723", allow-prereleases=true, source = "testpypi"}
+pydvl = {version = "0.3.1.dev733", allow-prereleases=true, source = "testpypi"}
 matplotlib = "^3.6.2"
 seaborn = "^0.12.2"
 dvc = "^2.38.1"
 
-
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^2.21.0"
-
 
 [[tool.poetry.source]]
 name = "testpypi"
@@ -32,9 +30,8 @@ default = false
 secondary = true
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core==1.2.0"]
 build-backend = "poetry.core.masonry.api"
-
 
 # Black-compatible settings for isort
 # See https://black.readthedocs.io/en/stable/compatible_configs.html

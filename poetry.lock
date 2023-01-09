@@ -1876,7 +1876,7 @@ pyparsing = ">=2.1.4"
 
 [[package]]
 name = "pydvl"
-version = "0.3.1.dev723"
+version = "0.3.1.dev733"
 description = "The Python Data Valuation Library"
 category = "main"
 optional = false
@@ -2589,7 +2589,7 @@ test = ["zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.10"
-content-hash = "69eb2a327f891014edb7d9b5b433be88c197a7435e3880466592d4bbdd6a0288"
+content-hash = "6cde703c4e3cf3793fceb535d04629648b476d4ad89501b483c931cd8c1a9f94"
 
 [metadata.files]
 aiohttp = [
@@ -3976,8 +3976,8 @@ pydot = [
     {file = "pydot-1.4.2.tar.gz", hash = "sha256:248081a39bcb56784deb018977e428605c1c758f10897a339fce1dd728ff007d"},
 ]
 pydvl = [
-    {file = "pyDVL-0.3.1.dev723-py3-none-any.whl", hash = "sha256:80227a45debedcae3f766deff087c06061b39132a27c672b9454ca94e7a1f2c5"},
-    {file = "pyDVL-0.3.1.dev723.tar.gz", hash = "sha256:3793744cf5393c693d524975fab5f5058bc62a0f0ab4a84f2dbda007dc779061"},
+    {file = "pyDVL-0.3.1.dev733-py3-none-any.whl", hash = "sha256:c0bc35d5ff46fcecf06654dde6a7de7c53bd7d7b9b96199222e7d502849761cb"},
+    {file = "pyDVL-0.3.1.dev733.tar.gz", hash = "sha256:a8674f83a48a315d400099364fd3f33cbc64370469abdc1a04c5504385072d67"},
 ]
 pygit2 = [
     {file = "pygit2-1.11.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:263e05ac655a4ce0a1083aaaedfd0a900b8dee2c3bb3ecf4f4e504a404467d1f"},
