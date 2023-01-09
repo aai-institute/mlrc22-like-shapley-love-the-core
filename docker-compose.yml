@@ -1,6 +1,8 @@
 services:
   ray-head:
-    image: "rayproject/ray:2.2.0-py310-cpu"
+    image: "ray-ml-reproducibility-challenge-2022"
+    build:
+      context: ./
     ports:
     - 8080:8080
     - 10001:10001
@@ -12,6 +14,7 @@ services:
     - --include-dashboard=true
     - --dashboard-port=8080
     - --dashboard-host=0.0.0.0
+    - --verbose
     - --block
     volumes:
     - /dev/shm:/dev/shm
@@ -19,11 +22,14 @@ services:
     - cluster
 
   ray-worker:
-    image: "rayproject/ray:2.2.0-py310-cpu"
+    image: "ray-ml-reproducibility-challenge-2022"
+    build:
+      context: ./
     command:
     - ray
     - start
     - --address=ray-head:6379
+    - --verbose
     - --block
     depends_on:
     - ray-head

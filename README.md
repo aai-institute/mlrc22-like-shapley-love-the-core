@@ -38,7 +38,7 @@ to start the ray cluster separately.
 To start the cluster simply use:
 
 ```shell
-docker-compose up --scale ray-worker=4
+docker-compose up --build --scale ray-worker=4
 ```
 
 This will start a head container along with 4 worker containers.
