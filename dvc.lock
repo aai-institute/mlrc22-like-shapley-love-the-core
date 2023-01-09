@@ -1,15 +1,15 @@
 schema: '2.0'
 stages:
   feature-valuation:
-    cmd: python -m experiments.feature_valuation_experiments
+    cmd: python -m ml_reproducibility_challenge.experiments.feature_valuation_experiments
     deps:
-    - path: src/experiments/feature_valuation_experiments.py
-      md5: 4132eaf9a4b4cc83973b3c8a61aca1a3
-      size: 5764
+    - path: src/ml_reproducibility_challenge/experiments/feature_valuation_experiments.py
+      md5: 29b4827274d80336e7dff37ddf9e7aa4
+      size: 5982
     outs:
     - path: output/feature_valuation/accuracies.csv
-      md5: f1f935409a08b3195d456459f9aceafe
-      size: 4901
+      md5: 8a9338d4e77c0850de8ac223cbac7319
+      size: 4893
     - path: output/feature_valuation/least_core_accuracy_over_coalitions.eps
-      md5: 4063d438205745191a36dd985208739e
-      size: 25408
+      md5: e22f57014c521d404ce3d5156c3f63a3
+      size: 25407

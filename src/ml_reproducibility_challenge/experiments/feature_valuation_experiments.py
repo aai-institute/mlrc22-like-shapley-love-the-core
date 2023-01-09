@@ -35,7 +35,7 @@ EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 
 
 def run():
-    parallel_config = ParallelConfig(address="ray://127.0.0.1:10001")
+    parallel_config = ParallelConfig(backend="ray", address="ray://127.0.0.1:10001")
 
     accuracies = []
 
