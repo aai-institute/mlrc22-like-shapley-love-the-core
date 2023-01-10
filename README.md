@@ -23,6 +23,29 @@ You can then activate the virtual environment using:
 poetry shell
 ```
 
+## Ray
+
+The main dependency used to compute the results uses [ray]() internally
+to parallelize its computations.
+
+Unfortunately, starting a ray cluster directly is known to mess up with
+the random seed set in the main process (See this
+[issue](https://github.com/ray-project/ray/issues/10145) for more information).
+
+Therefore, we decided to include a docker-compose file in this repository
+to start the ray cluster separately.
+
+To start the cluster simply use:
+
+```shell
+docker-compose up --build --scale ray-worker=4
+```
+
+This will start a head container along with 4 worker containers.
+
+Once it's started you can navigate to this address http://127.0.0.1:8080
+to view the ray dashboard.
+
 # Experiments
 
 We use [DVC](https://dvc.org/) to run the experiments and track their results.

@@ -1,8 +1,8 @@
 stages:
   feature-valuation:
-    cmd: python -m experiments.feature_valuation_experiments
+    cmd: python -m ml_reproducibility_challenge.experiments.feature_valuation_experiments
     deps:
-    - src/experiments/feature_valuation_experiments.py
+    - src/ml_reproducibility_challenge/experiments/feature_valuation_experiments.py
     outs:
     - output/feature_valuation/accuracies.csv
     - output/feature_valuation/least_core_accuracy_over_coalitions.eps

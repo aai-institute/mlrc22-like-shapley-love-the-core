@@ -1,0 +1,41 @@
+services:
+  ray-head:
+    image: "ray-ml-reproducibility-challenge-2022"
+    build:
+      context: ./
+    ports:
+    - 8080:8080
+    - 10001:10001
+    command: 
+    - ray
+    - start
+    - --head
+    - --port=6379
+    - --include-dashboard=true
+    - --dashboard-port=8080
+    - --dashboard-host=0.0.0.0
+    - --verbose
+    - --block
+    volumes:
+    - /dev/shm:/dev/shm
+    networks:
+    - cluster
+
+  ray-worker:
+    image: "ray-ml-reproducibility-challenge-2022"
+    build:
+      context: ./
+    command:
+    - ray
+    - start
+    - --address=ray-head:6379
+    - --verbose
+    - --block
+    depends_on:
+    - ray-head
+    networks:
+    - cluster
+
+
+networks:
+  cluster: {}
