@@ -10,7 +10,7 @@ from pydvl.utils.config import ParallelConfig
 from pydvl.value.least_core import montecarlo_least_core
 from pydvl.value.results import ValuationResult
 from sklearn.naive_bayes import GaussianNB
-from tqdm.auto import trange
+from tqdm.auto import tqdm, trange
 from tqdm.contrib.logging import tqdm_logging_redirect
 
 from ml_reproducibility_challenge.constants import OUTPUT_DIR, RANDOM_SEED
@@ -38,83 +38,120 @@ shade_colors = ["lightskyblue", "firebrick"]
 def run():
     parallel_config = ParallelConfig(backend="ray", address="ray://127.0.0.1:10001")
 
-    logger.info(f"Creating datasets")
-    training_dataset, testing_dataset = create_enron_spam_datasets()
-
-    logger.info(f"Training dataset size: {len(training_dataset)}")
-    logger.info(f"Testing dataset size: {len(testing_dataset)}")
-
-    model = GaussianNB()
-
-    logger.info("Creating utilities")
-    training_utility = Utility(
-        data=training_dataset,
-        model=model,
-        enable_cache=False,
-    )
-
-    testing_utility = Utility(
-        data=testing_dataset,
-        model=model,
-        enable_cache=False,
-    )
-
+    scorer_names = ["accuracy", "f1", "average_precision"]
     removal_percentages = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35]
+    label_flip_percentages = [0.10, 0.20, 0.30]
+    method_names = ["Random", "Least Core"]
 
-    max_iterations = 5000
-    logger.info(f"Using number of iterations {max_iterations}")
+    n_iterations = 5000
+    logger.info(f"Using number of iterations {n_iterations}")
 
     n_repetitions = 5
     logger.info(f"Using number of repetitions {n_repetitions}")
 
-    method_names = ["Random", "Least Core"]
+    logger.info("Using Gaussian Naive Bayes model")
+    model = GaussianNB()
+
     all_scores = []
 
     with tqdm_logging_redirect():
-        for method_name in method_names:
-            for _ in trange(n_repetitions, desc=f"Repetitions '{method_name}'"):
-                if method_name == "Random":
-                    values = ValuationResult.from_random(
-                        size=len(training_utility.data)
-                    )
-                else:
-                    values = montecarlo_least_core(
-                        training_utility,
-                        epsilon=0.01,
-                        max_iterations=max_iterations,
-                        n_jobs=4,
-                        config=parallel_config,
-                    )
-                scores = compute_removal_score(
-                    u=testing_utility,
-                    values=values,
-                    percentages=removal_percentages,
-                    progress=True,
+        for flip_percentage in tqdm(
+            label_flip_percentages, desc="Flip Percentage", position=0, leave=False
+        ):
+            logger.info(f"{flip_percentage=}")
+            logger.info(f"Creating datasets")
+            training_dataset, testing_dataset = create_enron_spam_datasets(
+                flip_percentage, random_state=RANDOM_SEED
+            )
+            logger.info(f"Training dataset size: {len(training_dataset)}")
+            logger.info(f"Testing dataset size: {len(testing_dataset)}")
+
+            for scorer_name in tqdm(
+                scorer_names, desc="Scorer", position=1, leave=False
+            ):
+                logger.info(f"{scorer_name=}")
+                logger.info("Creating utilities")
+                training_utility = Utility(
+                    data=training_dataset,
+                    model=model,
+                    scoring=scorer_name,
+                    enable_cache=False,
                 )
-                scores["method"] = method_name
-                all_scores.append(scores)
+
+                testing_utility = Utility(
+                    data=testing_dataset,
+                    model=model,
+                    scoring=scorer_name,
+                    enable_cache=False,
+                )
+
+                for method_name in tqdm(
+                    method_names, desc="Method", position=2, leave=True
+                ):
+                    logger.info(f"{method_name=}")
+                    for _ in trange(
+                        n_repetitions,
+                        desc=f"Repetitions '{method_name}'",
+                        position=3,
+                        leave=False,
+                    ):
+                        if method_name == "Random":
+                            values = ValuationResult.from_random(
+                                size=len(training_utility.data)
+                            )
+                        else:
+                            values = montecarlo_least_core(
+                                training_utility,
+                                epsilon=0.0,
+                                n_iterations=n_iterations,
+                                n_jobs=4,
+                                config=parallel_config,
+                                options={
+                                    "max_iters": 10000,
+                                },
+                            )
+                        scores = compute_removal_score(
+                            u=testing_utility,
+                            values=values,
+                            percentages=removal_percentages,
+                            remove_best=False,
+                            progress=False,
+                        )
+                        scores["method"] = method_name
+                        scores["scorer"] = scorer_name
+                        scores["flip_percentage"] = flip_percentage
+                        all_scores.append(scores)
 
     scores_df = pd.DataFrame(all_scores)
 
     scores_df.to_csv(EXPERIMENT_OUTPUT_DIR / "scores.csv", index=False)
 
-    fig, ax = plt.subplots()
+    for scorer in scorer_names:
+        for flip_percentage in label_flip_percentages:
+            fig, ax = plt.subplots()
 
-    for i, method_name in enumerate(method_names):
-        shaded_mean_std(
-            scores_df[scores_df["method"] == method_name].drop(columns=["method"]),
-            abscissa=removal_percentages,
-            mean_color=mean_colors[i],
-            shade_color=shade_colors[i],
-            xlabel="Percentage Removal",
-            ylabel="Accuracy",
-            label=f"{method_name}",
-            title="Test performance as we remove more and more training data with"
-            "the worst valuation guided by the least core vs. random selection.",
-            ax=ax,
-        )
-    plt.legend()
-    fig.savefig(EXPERIMENT_OUTPUT_DIR / "accuracy_over_removal_percentages.eps")
+            for i, method_name in enumerate(method_names):
+                df = scores_df[
+                    (scores_df["method"] == method_name)
+                    & (scores_df["scorer"] == scorer)
+                    & (scores_df["flip_percentage"] == flip_percentage)
+                ].drop(columns=["method", "scorer", "flip_percentage"])
+                shaded_mean_std(
+                    df,
+                    abscissa=removal_percentages,
+                    mean_color=mean_colors[i],
+                    shade_color=shade_colors[i],
+                    xlabel="Percentage Removal",
+                    ylabel="Accuracy",
+                    label=f"{method_name}",
+                    ax=ax,
+                )
+            plt.legend(loc="lower left")
+            fig.tight_layout()
+            fig.savefig(
+                EXPERIMENT_OUTPUT_DIR
+                / f"accuracy_over_removal_percentages_{scorer}_{flip_percentage:.2f}.pdf"
+            )
 
 
 if __name__ == "__main__":

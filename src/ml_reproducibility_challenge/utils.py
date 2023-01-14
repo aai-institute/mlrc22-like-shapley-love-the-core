@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import requests
 import torch
+from numpy.typing import NDArray
 from pydvl.utils import Dataset
 from sklearn.datasets import fetch_openml, load_wine
 from sklearn.feature_extraction.text import CountVectorizer
@@ -13,12 +14,13 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, OrdinalEncoder
 
-from .constants import (
+from ml_reproducibility_challenge.constants import (
     BREAST_CANCER_OPENML_ID,
     DATA_DIR,
+    ENRON1_SPAM_DATASET_URL,
     HOUSE_VOTING_OPENML_ID,
-    RANDOM_SEED,
 )
+
 from .dataset import FeatureValuationDataset
 
 __all__ = [
@@ -45,7 +47,9 @@ def set_random_seed(seed: int) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
 
 
-def create_breast_cancer_dataset() -> FeatureValuationDataset:
+def create_breast_cancer_dataset(
+    train_size: float = 0.8, *, random_state: int | None = None
+) -> FeatureValuationDataset:
     X, _ = fetch_openml(data_id=BREAST_CANCER_OPENML_ID, return_X_y=True, parser="auto")
     X = X.drop(columns="id")
     X = X.dropna()
@@ -54,23 +58,27 @@ def create_breast_cancer_dataset() -> FeatureValuationDataset:
     dataset = FeatureValuationDataset.from_arrays(
         X,
         y,
-        train_size=0.8,
-        random_state=RANDOM_SEED,
+        train_size=train_size,
+        random_state=random_state,
     )
 
     return dataset
 
 
-def create_wine_dataset() -> FeatureValuationDataset:
+def create_wine_dataset(
+    train_size: float = 0.8, *, random_state: int | None = None
+) -> FeatureValuationDataset:
     dataset = FeatureValuationDataset.from_sklearn(
         load_wine(),
-        train_size=0.8,
-        random_state=RANDOM_SEED,
+        train_size=train_size,
+        random_state=random_state,
     )
     return dataset
 
 
-def create_house_voting_dataset() -> FeatureValuationDataset:
+def create_house_voting_dataset(
+    train_size: float = 0.8, *, random_state: int | None = None
+) -> FeatureValuationDataset:
     X, y = fetch_openml(data_id=HOUSE_VOTING_OPENML_ID, return_X_y=True, parser="auto")
     # Fill NaN values with most frequent ones
     imputer = SimpleImputer(strategy="most_frequent")
@@ -82,19 +90,20 @@ def create_house_voting_dataset() -> FeatureValuationDataset:
     dataset = FeatureValuationDataset.from_arrays(
         X,
         y,
-        train_size=0.8,
-        random_state=RANDOM_SEED,
+        train_size=train_size,
+        random_state=random_state,
     )
     return dataset
 
 
-def create_enron_spam_datasets() -> tuple[Dataset, Dataset]:
-    enron_spam_url = "http://nlp.cs.aueb.gr/software_and_datasets/Enron-Spam/preprocessed/enron1.tar.gz"
+def create_enron_spam_datasets(
+    flip_percentage: float = 0.2, *, random_state: int | None = None
+) -> tuple[Dataset, Dataset]:
     dataset_file = DATA_DIR / "enron1.tar.gz"
     dataset_dir = DATA_DIR / "enron1"
     # Download dataset file, if it does not exist already
     if not dataset_file.is_file():
-        with requests.get(enron_spam_url, stream=True) as r:
+        with requests.get(ENRON1_SPAM_DATASET_URL, stream=True) as r:
             r.raise_for_status()
             with dataset_file.open("wb") as f:
                 for chunk in r.iter_content(chunk_size=8192):
@@ -129,22 +138,33 @@ def create_enron_spam_datasets() -> tuple[Dataset, Dataset]:
         ]
     )
 
+    # We only use a 1000 data points in total just like in the paper
+    X, _, y, _ = train_test_split(
+        X, y, stratify=y, train_size=1000, random_state=random_state
+    )
+
     # We split the data here in order to have a separate training and testing
     # dataset objects.
     # The first one will be used for computing the valuation
     # The second one will be used for the final performance evaluation
 
     x_train, x_test, y_train, y_test = train_test_split(
-        X, y, train_size=0.8, stratify=y
+        X,
+        y,
+        train_size=0.7,
+        stratify=y,
+        random_state=random_state,
     )
     x_train, x_val, y_train, y_val = train_test_split(
-        x_train, y_train, train_size=0.8, stratify=y_train
+        x_train,
+        y_train,
+        train_size=0.7,
+        stratify=y_train,
+        random_state=random_state,
     )
 
-    # We flip 20% of target labels
-    indices = np.random.choice(np.arange(len(y_train)), size=int(0.2 * len(y_train)))
-    y_train_flipped = y_train.copy()
-    y_train_flipped[indices] = np.logical_not(y_train_flipped[indices])
+    # We flip a certain percentage of target labels in the training data
+    y_train_flipped = flip_labels(y_train, flip_percentage, random_state=random_state)
 
     training_dataset = Dataset(
         x_train=x_train,
@@ -160,3 +180,13 @@ def create_enron_spam_datasets() -> tuple[Dataset, Dataset]:
         y_test=y_test,
     )
     return training_dataset, testing_dataset
+
+
+def flip_labels(
+    y: NDArray[np.int_], percentage: float, *, random_state: int | None = None
+) -> NDArray[np.int_]:
+    rng = np.random.default_rng(random_state)
+    indices = rng.choice(np.arange(len(y)), size=int(percentage * len(y)))
+    y = y.copy()
+    y[indices] = np.logical_not(y[indices])
+    return y
