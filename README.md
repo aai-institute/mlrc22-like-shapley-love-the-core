@@ -72,6 +72,16 @@ dvc repro feature-valuation
 
 You can find the results under [output/feature_valuation](output/feature_valuation).
 
+## Fixing Misalabeled Data
+
+To reproduce the results of this experiment use:
+
+```shell
+dvc repro fixing-mislabeled-data
+```
+
+You can find the results under [output/fixing_mislabeled_data](output/fixing_mislabeled_data).
+
 # Contributing
 
 Make sure to install the pre-commit hooks:
