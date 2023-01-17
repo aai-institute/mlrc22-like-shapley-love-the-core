@@ -48,7 +48,7 @@ def set_random_seed(seed: int) -> None:
 
 
 def create_breast_cancer_dataset(
-    train_size: float = 0.8, *, random_state: int | None = None
+    train_size: float = 0.8, *, random_state: np.random.RandomState = None
 ) -> FeatureValuationDataset:
     X, _ = fetch_openml(data_id=BREAST_CANCER_OPENML_ID, return_X_y=True, parser="auto")
     X = X.drop(columns="id")
@@ -66,7 +66,7 @@ def create_breast_cancer_dataset(
 
 
 def create_wine_dataset(
-    train_size: float = 0.8, *, random_state: int | None = None
+    train_size: float = 0.8, *, random_state: np.random.RandomState = None
 ) -> FeatureValuationDataset:
     dataset = FeatureValuationDataset.from_sklearn(
         load_wine(),
@@ -77,7 +77,7 @@ def create_wine_dataset(
 
 
 def create_house_voting_dataset(
-    train_size: float = 0.8, *, random_state: int | None = None
+    train_size: float = 0.8, *, random_state: np.random.RandomState = None
 ) -> FeatureValuationDataset:
     X, y = fetch_openml(data_id=HOUSE_VOTING_OPENML_ID, return_X_y=True, parser="auto")
     # Fill NaN values with most frequent ones
@@ -97,8 +97,8 @@ def create_house_voting_dataset(
 
 
 def create_enron_spam_datasets(
-    flip_percentage: float = 0.2, *, random_state: int | None = None
-) -> tuple[Dataset, Dataset]:
+    flip_percentage: float = 0.2, *, random_state: np.random.RandomState
+) -> tuple[Dataset, Dataset, NDArray[np.int_]]:
     dataset_file = DATA_DIR / "enron1.tar.gz"
     dataset_dir = DATA_DIR / "enron1"
     # Download dataset file, if it does not exist already
@@ -164,7 +164,9 @@ def create_enron_spam_datasets(
     )
 
     # We flip a certain percentage of target labels in the training data
-    y_train_flipped = flip_labels(y_train, flip_percentage, random_state=random_state)
+    y_train_flipped, flipped_indices = flip_labels(
+        y_train, flip_percentage, random_state=random_state
+    )
 
     training_dataset = Dataset(
         x_train=x_train,
@@ -179,14 +181,15 @@ def create_enron_spam_datasets(
         x_test=x_test,
         y_test=y_test,
     )
-    return training_dataset, testing_dataset
+    return training_dataset, testing_dataset, flipped_indices
 
 
 def flip_labels(
-    y: NDArray[np.int_], percentage: float, *, random_state: int | None = None
-) -> NDArray[np.int_]:
-    rng = np.random.default_rng(random_state)
-    indices = rng.choice(np.arange(len(y)), size=int(percentage * len(y)))
+    y: NDArray[np.int_], percentage: float, *, random_state: np.random.RandomState
+) -> tuple[NDArray[np.int_], NDArray[np.int_]]:
+    indices = random_state.choice(
+        np.arange(len(y)), size=int(percentage * len(y)), replace=False
+    )
     y = y.copy()
     y[indices] = np.logical_not(y[indices])
-    return y
+    return y, indices
