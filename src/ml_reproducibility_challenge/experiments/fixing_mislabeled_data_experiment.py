@@ -1,6 +1,9 @@
+import io
 import logging
+from contextlib import redirect_stderr
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from pydvl.reporting.plots import shaded_mean_std
@@ -9,6 +12,7 @@ from pydvl.utils import Utility
 from pydvl.utils.config import ParallelConfig
 from pydvl.value.least_core import montecarlo_least_core
 from pydvl.value.results import ValuationResult
+from pydvl.value.shapley import ShapleyMode, compute_shapley_values
 from sklearn.naive_bayes import GaussianNB
 from tqdm.auto import tqdm, trange
 from tqdm.contrib.logging import tqdm_logging_redirect
@@ -31,17 +35,17 @@ sns.set_context("paper", font_scale=1.5)
 EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "fixing_mislabeled_data"
 EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 
-mean_colors = ["dodgerblue", "indianred"]
-shade_colors = ["lightskyblue", "firebrick"]
+mean_colors = ["dodgerblue", "indianred", "limegreen"]
+shade_colors = ["lightskyblue", "firebrick", "seagreen"]
 
 
 def run():
-    parallel_config = ParallelConfig(backend="ray", address="ray://127.0.0.1:10001")
+    parallel_config = ParallelConfig(backend="ray", logging_level=logging.ERROR)
 
     scorer_names = ["accuracy", "f1", "average_precision"]
     removal_percentages = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35]
     label_flip_percentages = [0.10, 0.20, 0.30]
-    method_names = ["Random", "Least Core"]
+    method_names = ["Random", "Least Core", "TMC Shapley"]
 
     n_iterations = 5000
     logger.info(f"Using number of iterations {n_iterations}")
@@ -49,8 +53,9 @@ def run():
     n_repetitions = 5
     logger.info(f"Using number of repetitions {n_repetitions}")
 
-    logger.info("Using Gaussian Naive Bayes model")
     model = GaussianNB()
+
+    random_state = np.random.RandomState(RANDOM_SEED)
 
     all_scores = []
 
@@ -60,9 +65,11 @@ def run():
         ):
             logger.info(f"{flip_percentage=}")
             logger.info(f"Creating datasets")
-            training_dataset, testing_dataset = create_enron_spam_datasets(
-                flip_percentage, random_state=RANDOM_SEED
-            )
+            (
+                training_dataset,
+                testing_dataset,
+                flipped_indices,
+            ) = create_enron_spam_datasets(flip_percentage, random_state=random_state)
             logger.info(f"Training dataset size: {len(training_dataset)}")
             logger.info(f"Testing dataset size: {len(testing_dataset)}")
 
@@ -99,17 +106,42 @@ def run():
                             values = ValuationResult.from_random(
                                 size=len(training_utility.data)
                             )
-                        else:
+                        elif method_name == "Least Core":
                             values = montecarlo_least_core(
                                 training_utility,
                                 epsilon=0.0,
                                 n_iterations=n_iterations,
-                                n_jobs=4,
+                                n_jobs=-1,
                                 config=parallel_config,
                                 options={
                                     "max_iters": 10000,
                                 },
                             )
+                        else:
+                            f = io.StringIO()
+                            with redirect_stderr(f):
+                                values = compute_shapley_values(
+                                    training_utility,
+                                    # The budget for TMC Shapley is less because
+                                    # for each iteration it goes over all indices
+                                    # of an entire permutation of indices
+                                    n_iterations=n_iterations
+                                    // len(training_utility.data),
+                                    n_jobs=-1,
+                                    config=parallel_config,
+                                    mode=ShapleyMode.PermutationMontecarlo,
+                                )
+                        # Sort values in increasing order
+                        values.sort()
+                        # The data points with flipped labels should have the lowest valuation
+                        # So to verify that we compute the percentage of data points
+                        # with the lowest valuation that correspond to the flipped data points
+                        lowest_value_indices = values.indices[: len(flipped_indices)]
+                        assert lowest_value_indices.shape == flipped_indices.shape
+                        flip_accuracy = np.in1d(
+                            lowest_value_indices, flipped_indices
+                        ).mean()
+
                         scores = compute_removal_score(
                             u=testing_utility,
                             values=values,
@@ -120,6 +152,7 @@ def run():
                         scores["method"] = method_name
                         scores["scorer"] = scorer_name
                         scores["flip_percentage"] = flip_percentage
+                        scores["flip_accuracy"] = flip_accuracy
                         all_scores.append(scores)
 
     scores_df = pd.DataFrame(all_scores)
@@ -135,7 +168,7 @@ def run():
                     (scores_df["method"] == method_name)
                     & (scores_df["scorer"] == scorer)
                     & (scores_df["flip_percentage"] == flip_percentage)
-                ].drop(columns=["method", "scorer", "flip_percentage"])
+                ].drop(columns=["method", "scorer", "flip_percentage", "flip_accuracy"])
                 shaded_mean_std(
                     df,
                     abscissa=removal_percentages,
@@ -152,6 +185,37 @@ def run():
                 EXPERIMENT_OUTPUT_DIR
                 / f"accuracy_over_removal_percentages_{scorer}_{flip_percentage:.2f}.pdf"
             )
+
+    for flip_percentage in label_flip_percentages:
+        fig, ax = plt.subplots()
+        sns.boxplot(
+            data=scores_df,
+            x="method",
+            y="flip_accuracy",
+            hue="scorer",
+            palette={
+                "accuracy": "indianred",
+                "average_precision": "darkorchid",
+                "f1": "dodgerblue",
+            },
+            ax=ax,
+        )
+        sns.move_legend(
+            ax,
+            "lower center",
+            bbox_to_anchor=(0.5, 1),
+            ncol=3,
+            title=None,
+            frameon=False,
+        )
+        ax.set_ylim(0.0, 1.1)
+        ax.set_xlabel("Method")
+        ax.set_ylabel("Flipped Data Points Accuracy")
+        fig.tight_layout()
+        fig.savefig(
+            EXPERIMENT_OUTPUT_DIR
+            / f"flip_accuracy_over_removal_percentages_{flip_percentage:.2f}.pdf"
+        )
 
 
 if __name__ == "__main__":

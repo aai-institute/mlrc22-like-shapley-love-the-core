@@ -35,21 +35,23 @@ EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 
 
 def run():
-    parallel_config = ParallelConfig(backend="ray", address="ray://127.0.0.1:10001")
+    parallel_config = ParallelConfig(backend="ray", logging_level=logging.ERROR)
 
     scorer_names = ["accuracy", "f1", "average_precision"]
     fractions = [0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.20]
     n_repetitions = 10
 
+    random_state = np.random.RandomState(RANDOM_SEED)
+
     accuracies = []
 
     for dataset_name in ["House", "Medical", "Chemical"]:
         if dataset_name == "House":
-            dataset = create_house_voting_dataset(random_state=RANDOM_SEED)
+            dataset = create_house_voting_dataset(random_state=random_state)
         elif dataset_name == "Medical":
-            dataset = create_breast_cancer_dataset(random_state=RANDOM_SEED)
+            dataset = create_breast_cancer_dataset(random_state=random_state)
         elif dataset_name == "Chemical":
-            dataset = create_wine_dataset(random_state=RANDOM_SEED)
+            dataset = create_wine_dataset(random_state=random_state)
         else:
             raise ValueError(f"Unknown dataset '{dataset_name}'")
         logger.info(f"Creating dataset '{dataset_name}'")
@@ -59,7 +61,7 @@ def run():
 
         model = make_pipeline(
             StandardScaler(),
-            LogisticRegression(max_iter=1000, random_state=RANDOM_SEED),
+            LogisticRegression(max_iter=1000, random_state=random_state),
         )
 
         logger.info(
@@ -96,7 +98,7 @@ def run():
                                 utility,
                                 epsilon=0.0,
                                 n_iterations=n_iterations,
-                                n_jobs=4,
+                                n_jobs=-1,
                                 config=parallel_config,
                                 options={
                                     "max_iters": 10000,
