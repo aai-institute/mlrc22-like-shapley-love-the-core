@@ -5,6 +5,7 @@ import tarfile
 import numpy as np
 import pandas as pd
 import requests
+import sklearn.datasets
 import torch
 from numpy.typing import NDArray
 from pydvl.utils import Dataset
@@ -193,3 +194,47 @@ def flip_labels(
     y = y.copy()
     y[indices] = np.logical_not(y[indices])
     return y, indices
+
+
+def create_synthetic_dataset(
+    n_features: int,
+    n_train_samples: int,
+    n_test_samples: int,
+    *,
+    noise_level: float = 0.0,
+    noise_fraction: float = 0.0,
+    random_state: np.random.RandomState,
+) -> Dataset:
+    n_total_samples = n_train_samples + n_test_samples
+    X = random_state.multivariate_normal(
+        mean=np.zeros(n_features),
+        cov=np.eye(n_features),
+        size=n_total_samples,
+    )
+    scale = 1 + 10 * random_state.random(size=n_features)
+    X *= scale
+    X_centered = X - np.mean(X)
+    pr = 1 / (1 + np.exp(-X_centered))
+    y = (pr > random_state.random(n_total_samples)).astype(int)
+
+    x_train, x_test = X[:n_train_samples], X[n_train_samples:]
+    y_train, y_test = y[:n_train_samples], y[n_train_samples:]
+
+    if noise_level > 0 and noise_fraction > 0:
+        indices = random_state.choice(
+            np.arange(len(x_train)),
+            size=int(noise_fraction * len(x_train)),
+            replace=False,
+        )
+        x_train[indices] += noise_level * random_state.standard_normal(
+            size=x_train[indices].shape
+        )
+
+    dataset = Dataset(
+        x_train=x_train,
+        y_train=y_train,
+        x_test=x_test,
+        y_test=y_test,
+    )
+
+    return dataset
