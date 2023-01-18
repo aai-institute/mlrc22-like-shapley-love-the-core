@@ -4,5 +4,10 @@ stages:
     deps:
     - src/ml_reproducibility_challenge/experiments/feature_valuation_experiments.py
     outs:
-    - output/feature_valuation/accuracies.csv
-    - output/feature_valuation/least_core_accuracy_over_coalitions.eps
+    - output/feature_valuation/
+  fixing-mislabeled-data:
+    cmd: python -m ml_reproducibility_challenge.experiments.fixing_mislabeled_data_experiment
+    deps:
+    - src/ml_reproducibility_challenge/experiments/fixing_mislabeled_data_experiment.py
+    outs:
+    - output/fixing_mislabeled_data/

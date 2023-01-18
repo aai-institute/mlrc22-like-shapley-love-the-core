@@ -4,12 +4,21 @@ stages:
     cmd: python -m ml_reproducibility_challenge.experiments.feature_valuation_experiments
     deps:
     - path: src/ml_reproducibility_challenge/experiments/feature_valuation_experiments.py
-      md5: 29b4827274d80336e7dff37ddf9e7aa4
-      size: 5982
+      md5: 9969dfc045a153402d04743d5362f15f
+      size: 7310
     outs:
-    - path: output/feature_valuation/accuracies.csv
-      md5: 8a9338d4e77c0850de8ac223cbac7319
-      size: 4893
-    - path: output/feature_valuation/least_core_accuracy_over_coalitions.eps
-      md5: e22f57014c521d404ce3d5156c3f63a3
-      size: 25407
+    - path: output/feature_valuation/
+      md5: 573de7567ffb44954fedb4d057f52bab.dir
+      size: 91319
+      nfiles: 4
+  fixing-mislabeled-data:
+    cmd: python -m ml_reproducibility_challenge.experiments.fixing_mislabeled_data_experiment
+    deps:
+    - path: src/ml_reproducibility_challenge/experiments/fixing_mislabeled_data_experiment.py
+      md5: 220432f972b470875ee0acf7995542cf
+      size: 8560
+    outs:
+    - path: output/fixing_mislabeled_data/
+      md5: c96fce2e19c18b520514779f097023d3.dir
+      size: 205818
+      nfiles: 13
