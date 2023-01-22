@@ -4,21 +4,32 @@ stages:
     cmd: python -m ml_reproducibility_challenge.experiments.feature_valuation_experiments
     deps:
     - path: src/ml_reproducibility_challenge/experiments/feature_valuation_experiments.py
-      md5: 9969dfc045a153402d04743d5362f15f
-      size: 7310
+      md5: 59e019a2bc8e9419410a94e3107cade5
+      size: 7445
     outs:
     - path: output/feature_valuation/
-      md5: 573de7567ffb44954fedb4d057f52bab.dir
-      size: 91319
+      md5: 0307a8c7c6164d09db58d06b817dee7f.dir
+      size: 91220
       nfiles: 4
   fixing-mislabeled-data:
     cmd: python -m ml_reproducibility_challenge.experiments.fixing_mislabeled_data_experiment
     deps:
     - path: src/ml_reproducibility_challenge/experiments/fixing_mislabeled_data_experiment.py
-      md5: 220432f972b470875ee0acf7995542cf
-      size: 8560
+      md5: 593d90de0f777039483fb2303df6ea09
+      size: 8901
     outs:
     - path: output/fixing_mislabeled_data/
-      md5: c96fce2e19c18b520514779f097023d3.dir
-      size: 205818
+      md5: 63a80abb1a181d7e293f8c856f4c76e6.dir
+      size: 203123
       nfiles: 13
+  noisy-data:
+    cmd: python -m ml_reproducibility_challenge.experiments.noisy_data_experiment
+    deps:
+    - path: src/ml_reproducibility_challenge/experiments/noisy_data_experiment.py
+      md5: dd7f8647823557b06747029bfa7cff17
+      size: 7281
+    outs:
+    - path: output/noisy_data/
+      md5: e70bfc5e76925ebb2372c2bedc4fb019.dir
+      size: 41730
+      nfiles: 4

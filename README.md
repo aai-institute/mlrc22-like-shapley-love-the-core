@@ -82,6 +82,16 @@ dvc repro fixing-mislabeled-data
 
 You can find the results under [output/fixing_mislabeled_data](output/fixing_mislabeled_data).
 
+## Noisy Data
+
+To reproduce the results of this experiment use:
+
+```shell
+dvc repro noisy-data
+```
+
+You can find the results under [output/noisy_data](output/noisy_data).
+
 # Contributing
 
 Make sure to install the pre-commit hooks:
