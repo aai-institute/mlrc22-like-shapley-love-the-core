@@ -5,7 +5,6 @@ import tarfile
 import numpy as np
 import pandas as pd
 import requests
-import sklearn.datasets
 import torch
 from numpy.typing import NDArray
 from pydvl.utils import Dataset
@@ -30,6 +29,7 @@ __all__ = [
     "create_wine_dataset",
     "create_house_voting_dataset",
     "create_enron_spam_datasets",
+    "create_synthetic_dataset",
 ]
 
 
@@ -204,31 +204,41 @@ def create_synthetic_dataset(
     noise_level: float = 0.0,
     noise_fraction: float = 0.0,
     random_state: np.random.RandomState,
-) -> Dataset:
+) -> tuple[Dataset, NDArray[np.int_]]:
     n_total_samples = n_train_samples + n_test_samples
     X = random_state.multivariate_normal(
         mean=np.zeros(n_features),
         cov=np.eye(n_features),
         size=n_total_samples,
     )
-    scale = 1 + 10 * random_state.random(size=n_features)
+    scale = 1 + 10 * random_state.uniform(low=-1.0, high=1.0, size=n_features)
     X *= scale
-    X_centered = X - np.mean(X)
-    pr = 1 / (1 + np.exp(-X_centered))
+    feature_mask = random_state.random(n_features) > 0.5
+    Xb = X @ feature_mask
+    Xb -= np.mean(X)
+    pr = 1 / (1 + np.exp(-Xb))
     y = (pr > random_state.random(n_total_samples)).astype(int)
 
     x_train, x_test = X[:n_train_samples], X[n_train_samples:]
     y_train, y_test = y[:n_train_samples], y[n_train_samples:]
 
-    if noise_level > 0 and noise_fraction > 0:
+    if noise_fraction > 0.0:
+        n_noisy_samples = int(noise_fraction * n_train_samples)
         indices = random_state.choice(
-            np.arange(len(x_train)),
-            size=int(noise_fraction * len(x_train)),
+            np.arange(n_train_samples),
+            size=n_noisy_samples,
             replace=False,
         )
-        x_train[indices] += noise_level * random_state.standard_normal(
+        x_noisy = x_train[indices, :]
+        y_noisy = np.logical_not(y_train[indices])
+        x_noisy += noise_level * random_state.standard_normal(
             size=x_train[indices].shape
         )
+        x_train = np.concatenate([x_train, x_noisy], axis=0)
+        y_train = np.concatenate([y_train, y_noisy], axis=0)
+        noisy_indices = np.arange(n_train_samples, n_train_samples + n_noisy_samples)
+    else:
+        noisy_indices = np.array([], dtype=int)
 
     dataset = Dataset(
         x_train=x_train,
@@ -237,4 +247,4 @@ def create_synthetic_dataset(
         y_test=y_test,
     )
 
-    return dataset
+    return dataset, noisy_indices

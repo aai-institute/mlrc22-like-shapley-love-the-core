@@ -34,12 +34,52 @@ EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "feature_valuation"
 EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 
 
+def plot_least_core_accuracy_over_coalitions(
+    accuracies_df: pd.DataFrame, *, scorer_names: list[str]
+) -> None:
+    for scorer in scorer_names:
+        df = accuracies_df[accuracies_df["scorer"] == scorer]
+        fig, ax = plt.subplots()
+        sns.barplot(
+            data=df,
+            x="fraction",
+            y="accuracy",
+            hue="dataset",
+            palette={
+                "House": "indianred",
+                "Medical": "darkorchid",
+                "Chemical": "dodgerblue",
+            },
+            ax=ax,
+        )
+        sns.move_legend(
+            ax,
+            "lower center",
+            bbox_to_anchor=(0.5, 1),
+            ncol=3,
+            title=None,
+            frameon=False,
+        )
+        ax.set_ylim(0.0, 1.1)
+        ax.set_xlabel("Fraction of Samples")
+        ax.set_ylabel("Accuracy")
+        fig.tight_layout()
+        fig.savefig(
+            EXPERIMENT_OUTPUT_DIR / f"least_core_accuracy_over_coalitions_{scorer}.pdf"
+        )
+
+
 def run():
     parallel_config = ParallelConfig(backend="ray", logging_level=logging.ERROR)
 
     scorer_names = ["accuracy", "f1", "average_precision"]
     fractions = [0.01, 0.02, 0.05, 0.075, 0.1, 0.15, 0.20]
+
     n_repetitions = 10
+    logger.info(f"Using number of repetitions {n_repetitions}")
+
+    n_jobs = 4
+    logger.info(f"Using number of jobs {n_jobs}")
 
     random_state = np.random.RandomState(RANDOM_SEED)
 
@@ -98,7 +138,7 @@ def run():
                                 utility,
                                 epsilon=0.0,
                                 n_iterations=n_iterations,
-                                n_jobs=-1,
+                                n_jobs=n_jobs,
                                 config=parallel_config,
                                 options={
                                     "max_iters": 10000,
@@ -156,36 +196,7 @@ def run():
 
     accuracies_df.to_csv(EXPERIMENT_OUTPUT_DIR / "accuracies.csv", index=False)
 
-    for scorer in scorer_names:
-        df = accuracies_df[accuracies_df["scorer"] == scorer]
-        fig, ax = plt.subplots()
-        sns.barplot(
-            data=df,
-            x="fraction",
-            y="accuracy",
-            hue="dataset",
-            palette={
-                "House": "indianred",
-                "Medical": "darkorchid",
-                "Chemical": "dodgerblue",
-            },
-            ax=ax,
-        )
-        sns.move_legend(
-            ax,
-            "lower center",
-            bbox_to_anchor=(0.5, 1),
-            ncol=3,
-            title=None,
-            frameon=False,
-        )
-        ax.set_ylim(0.0, 1.1)
-        ax.set_xlabel("Fraction of Samples")
-        ax.set_ylabel("Accuracy")
-        fig.tight_layout()
-        fig.savefig(
-            EXPERIMENT_OUTPUT_DIR / f"least_core_accuracy_over_coalitions_{scorer}.pdf"
-        )
+    plot_least_core_accuracy_over_coalitions(accuracies_df, scorer_names=scorer_names)
 
 
 if __name__ == "__main__":

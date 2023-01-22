@@ -11,3 +11,9 @@ stages:
     - src/ml_reproducibility_challenge/experiments/fixing_mislabeled_data_experiment.py
     outs:
     - output/fixing_mislabeled_data/
+  noisy-data:
+    cmd: python -m ml_reproducibility_challenge.experiments.noisy_data_experiment
+    deps:
+    - src/ml_reproducibility_challenge/experiments/noisy_data_experiment.py
+    outs:
+    - output/noisy_data/
