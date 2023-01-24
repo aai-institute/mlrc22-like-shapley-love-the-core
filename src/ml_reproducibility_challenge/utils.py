@@ -1,11 +1,13 @@
 import os
 import random
 import tarfile
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import requests
 import torch
+from datasets import DatasetDict, load_dataset, load_from_disk
 from numpy.typing import NDArray
 from pydvl.utils import Dataset
 from sklearn.datasets import fetch_openml, load_wine
@@ -13,12 +15,18 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, OrdinalEncoder
+from torch.utils.data import DataLoader
+from torchvision.models import Inception_V3_Weights, inception_v3
+from tqdm.auto import tqdm
 
 from ml_reproducibility_challenge.constants import (
     BREAST_CANCER_OPENML_ID,
     DATA_DIR,
     ENRON1_SPAM_DATASET_URL,
     HOUSE_VOTING_OPENML_ID,
+    IMAGENET_DOG_LABELS,
+    IMAGENET_FISH_LABELS,
+    RANDOM_SEED,
 )
 
 from .dataset import FeatureValuationDataset
@@ -30,6 +38,7 @@ __all__ = [
     "create_house_voting_dataset",
     "create_enron_spam_datasets",
     "create_synthetic_dataset",
+    "create_dog_vs_fish_dataset",
 ]
 
 
@@ -248,3 +257,136 @@ def create_synthetic_dataset(
     )
 
     return dataset, noisy_indices
+
+
+def download_and_filter_imagenet(seed: int) -> DatasetDict:
+    ds = load_dataset("imagenet-1k")
+
+    # Keep only dog and fish labels
+    def is_label_dog_fish(x):
+        return x["label"] in (IMAGENET_DOG_LABELS + IMAGENET_FISH_LABELS)
+
+    dog_fish_ds = ds.filter(is_label_dog_fish)
+
+    # Assign new labels
+    def new_label(x):
+        if x["label"] in IMAGENET_DOG_LABELS:
+            x["label"] = 0
+        else:
+            x["label"] = 1
+        return x
+
+    dog_fish_ds = dog_fish_ds.map(new_label)
+
+    # Remove 'test' split because it is empty
+    assert dog_fish_ds["test"].shape[0] == 0
+    dog_fish_ds.pop("test")
+
+    # Subsample the dataset to keep 1200 samples only
+    dog_fish_ds["train"] = dog_fish_ds["train"].train_test_split(
+        train_size=600, stratify_by_column="label", seed=seed
+    )["train"]
+    dog_fish_ds["validation"] = dog_fish_ds["validation"].train_test_split(
+        train_size=600, stratify_by_column="label", seed=seed
+    )["train"]
+    return dog_fish_ds
+
+
+def generate_inception_v3_embeddings(
+    ds: DatasetDict,
+) -> tuple[
+    tuple[NDArray[np.float_], NDArray[np.float_]],
+    tuple[NDArray[np.float_], NDArray[np.float_]],
+]:
+    # Instantiate Inception V3 model with pretrained weights
+    pretrained_weights = Inception_V3_Weights.IMAGENET1K_V1
+    inception_model = inception_v3(weights=pretrained_weights)
+    inception_model.eval()
+
+    # remove last layer
+    class Identity(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+
+        def forward(self, x):
+            return x
+
+    inception_model.fc = Identity()
+    preprocess = pretrained_weights.transforms()
+
+    def transform(x):
+        try:
+            x["image"] = [preprocess(x["image"][0])]
+        except RuntimeError:
+            x["image"] = [preprocess(x["image"][0].convert("RGB"))]
+        return x
+
+    ds.set_transform(transform)
+
+    # Run inference on images
+    train_dataloader = DataLoader(ds["train"], batch_size=32)
+    val_dataloader = DataLoader(ds["validation"], batch_size=32)
+
+    train_inputs = []
+    train_labels = []
+    val_inputs = []
+    val_labels = []
+
+    with torch.no_grad():
+        for batch in tqdm(train_dataloader, desc="Training Set"):
+            image, label = batch["image"], batch["label"]
+            output = inception_model(image)
+            train_inputs.append(output.numpy())
+            train_labels.append(label.numpy())
+
+        for batch in tqdm(val_dataloader, desc="Validation Set"):
+            image, label = batch["image"], batch["label"]
+            output = inception_model(image)
+            val_inputs.append(output.numpy())
+            val_labels.append(label.numpy())
+
+    x_train = np.concatenate(train_inputs, axis=0)
+    y_train = np.concatenate(train_labels, axis=0)
+    x_test = np.concatenate(val_inputs, axis=0)
+    y_test = np.concatenate(train_labels, axis=0)
+
+    return (x_train, y_train), (x_test, y_test)
+
+
+def create_dog_vs_fish_dataset(seed: int = RANDOM_SEED) -> Dataset:
+    dog_vs_fish_dataset_dir = DATA_DIR / "dog_vs_fish"
+    dog_vs_fish_dataset_dir.mkdir(exist_ok=True)
+
+    filtered_imagenet_dataset_dir = dog_vs_fish_dataset_dir / "filtered_imagenet"
+    train_array_file = dog_vs_fish_dataset_dir / "train_arrays.npz"
+    val_array_file = dog_vs_fish_dataset_dir / "val_arrays.npz"
+
+    if filtered_imagenet_dataset_dir.is_dir():
+        dog_fish_ds = load_from_disk(os.fspath(filtered_imagenet_dataset_dir))
+    else:
+        dog_fish_ds = download_and_filter_imagenet(seed=seed)
+        # Save dataset to disk to avoid redoing the work
+        dog_fish_ds.save_to_disk(filtered_imagenet_dataset_dir)
+
+    if train_array_file.is_file() and val_array_file.is_file():
+        array_dict = np.load(train_array_file)
+        x_train, y_train = array_dict["x_train"], array_dict["y_train"]
+        array_dict = np.load(val_array_file)
+        x_test, y_test = array_dict["x_test"], array_dict["y_test"]
+    else:
+        (x_train, y_train), (x_test, y_test) = generate_inception_v3_embeddings(
+            dog_fish_ds
+        )
+        # Save arrays to disk to avoid redoing the work
+        np.savez(train_array_file, x_train=x_train, y_train=y_train)
+        np.savez(val_array_file, x_test=x_test, y_test=y_test)
+
+    dataset = Dataset(
+        x_train=x_train,
+        y_train=y_train,
+        x_test=x_test,
+        y_test=y_test,
+        target_names=["dog", "fish"],
+    )
+
+    return dataset
