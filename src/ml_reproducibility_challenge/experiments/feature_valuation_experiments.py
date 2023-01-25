@@ -65,7 +65,8 @@ def plot_least_core_accuracy_over_coalitions(
         ax.set_ylabel("Accuracy")
         fig.tight_layout()
         fig.savefig(
-            EXPERIMENT_OUTPUT_DIR / f"least_core_accuracy_over_coalitions_{scorer}.pdf"
+            EXPERIMENT_OUTPUT_DIR / f"least_core_accuracy_over_coalitions_{scorer}.pdf",
+            bbox_inches="tight",
         )
 
 

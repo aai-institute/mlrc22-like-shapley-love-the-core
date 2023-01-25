@@ -70,7 +70,8 @@ def plot_flip_accuracy_over_removal_percentages(
         fig.tight_layout()
         fig.savefig(
             EXPERIMENT_OUTPUT_DIR
-            / f"flip_accuracy_over_removal_percentages_{flip_percentage:.2f}.pdf"
+            / f"flip_accuracy_over_removal_percentages_{flip_percentage:.2f}.pdf",
+            bbox_inches="tight",
         )
 
 
@@ -113,7 +114,8 @@ def plot_utility_over_removal_percentages(
             fig.tight_layout()
             fig.savefig(
                 EXPERIMENT_OUTPUT_DIR
-                / f"utility_over_removal_percentages_{scorer}_{flip_percentage:.2f}.pdf"
+                / f"utility_over_removal_percentages_{scorer}_{flip_percentage:.2f}.pdf",
+                bbox_inches="tight",
             )
 
 

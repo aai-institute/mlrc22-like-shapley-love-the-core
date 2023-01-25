@@ -60,7 +60,10 @@ def plot_clean_data_utility_percentage(
         bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left", mode="expand", ncol=2
     )
     fig.tight_layout()
-    fig.savefig(EXPERIMENT_OUTPUT_DIR / f"clean_data_utility_percentage.pdf")
+    fig.savefig(
+        EXPERIMENT_OUTPUT_DIR / f"clean_data_utility_percentage.pdf",
+        bbox_inches="tight",
+    )
 
 
 def plot_clean_data_vs_noisy_data_utility(
@@ -98,7 +101,8 @@ def plot_clean_data_vs_noisy_data_utility(
         fig.tight_layout()
         fig.savefig(
             EXPERIMENT_OUTPUT_DIR
-            / f"clean_data_vs_noisy_data_utility_{noise_fraction:.2f}.pdf"
+            / f"clean_data_vs_noisy_data_utility_{noise_fraction:.2f}.pdf",
+            bbox_inches="tight",
         )
 
 

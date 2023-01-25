@@ -74,7 +74,8 @@ def plot_utility_over_removal_percentages(
             fig.tight_layout()
             fig.savefig(
                 EXPERIMENT_OUTPUT_DIR
-                / f"utility_over_removal_percentages_{type}_{budget}.pdf"
+                / f"utility_over_removal_percentages_{type}_{budget}.pdf",
+                bbox_inches="tight",
             )
 
 
