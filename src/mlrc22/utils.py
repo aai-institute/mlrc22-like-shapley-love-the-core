@@ -1,7 +1,6 @@
 import os
 import random
 import tarfile
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -19,7 +18,7 @@ from torch.utils.data import DataLoader
 from torchvision.models import Inception_V3_Weights, inception_v3
 from tqdm.auto import tqdm
 
-from ml_reproducibility_challenge.constants import (
+from mlrc22.constants import (
     BREAST_CANCER_OPENML_ID,
     DATA_DIR,
     ENRON1_SPAM_DATASET_URL,

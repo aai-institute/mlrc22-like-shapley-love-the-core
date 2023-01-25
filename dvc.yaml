@@ -1,31 +1,31 @@
 stages:
   feature-valuation:
-    cmd: python -m ml_reproducibility_challenge.experiments.feature_valuation_experiments
+    cmd: python -m mlrc22.experiments.feature_valuation_experiments
     deps:
-    - src/ml_reproducibility_challenge/experiments/feature_valuation_experiments.py
+    - src/mlrc22/experiments/feature_valuation_experiments.py
     outs:
     - output/feature_valuation/
   fixing-mislabeled-data:
-    cmd: python -m ml_reproducibility_challenge.experiments.fixing_mislabeled_data_experiment
+    cmd: python -m mlrc22.experiments.fixing_mislabeled_data_experiment
     deps:
-    - src/ml_reproducibility_challenge/experiments/fixing_mislabeled_data_experiment.py
+    - src/mlrc22/experiments/fixing_mislabeled_data_experiment.py
     outs:
     - output/fixing_mislabeled_data/
   noisy-data:
-    cmd: python -m ml_reproducibility_challenge.experiments.noisy_data_experiment
+    cmd: python -m mlrc22.experiments.noisy_data_experiment
     deps:
-    - src/ml_reproducibility_challenge/experiments/noisy_data_experiment.py
+    - src/mlrc22/experiments/noisy_data_experiment.py
     outs:
     - output/noisy_data/
   data-valuation-synthetic:
-    cmd: python -m ml_reproducibility_challenge.experiments.data_valuation_synthetic_experiment
+    cmd: python -m mlrc22.experiments.data_valuation_synthetic_experiment
     deps:
-    - src/ml_reproducibility_challenge/experiments/data_valuation_synthetic_experiment.py
+    - src/mlrc22/experiments/data_valuation_synthetic_experiment.py
     outs:
     - output/data_valuation_synthetic/
   data-valution-dog-vs-fish:
-    cmd: python -m ml_reproducibility_challenge.experiments.data_valuation_dog_vs_fish_experiment
+    cmd: python -m mlrc22.experiments.data_valuation_dog_vs_fish_experiment
     deps:
-    - src/ml_reproducibility_challenge/experiments/data_valuation_dog_vs_fish_experiment.py
+    - src/mlrc22/experiments/data_valuation_dog_vs_fish_experiment.py
     outs:
     - output/data_valuation_dog_vs_fish/

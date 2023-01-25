@@ -17,11 +17,8 @@ from sklearn.naive_bayes import GaussianNB
 from tqdm.auto import tqdm, trange
 from tqdm.contrib.logging import tqdm_logging_redirect
 
-from ml_reproducibility_challenge.constants import OUTPUT_DIR, RANDOM_SEED
-from ml_reproducibility_challenge.utils import (
-    create_enron_spam_datasets,
-    set_random_seed,
-)
+from mlrc22.constants import OUTPUT_DIR, RANDOM_SEED
+from mlrc22.utils import create_enron_spam_datasets, set_random_seed
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
