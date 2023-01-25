@@ -219,8 +219,6 @@ def create_synthetic_dataset(
         cov=np.eye(n_features),
         size=n_total_samples,
     )
-    scale = 1 + 10 * random_state.uniform(low=-1.0, high=1.0, size=n_features)
-    X *= scale
     feature_mask = random_state.random(n_features) > 0.5
     Xb = X @ feature_mask
     Xb -= np.mean(X)
