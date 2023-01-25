@@ -35,7 +35,7 @@ logging.basicConfig(
 sns.set_theme(style="whitegrid", palette="pastel")
 sns.set_context("paper", font_scale=1.5)
 
-EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "data_removal_dog_vs_fish"
+EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "data_valuation_dog_vs_fish"
 EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 
 mean_colors = ["dodgerblue", "darkorange", "limegreen", "indianred", "darkorchid"]
@@ -143,7 +143,7 @@ def run():
                             config=parallel_config,
                             options={
                                 "solver": "SCS",
-                                "max_iters": 20000,
+                                "max_iters": 30000,
                             },
                         )
                     else:

@@ -49,6 +49,28 @@ dvc repro feature-valuation
 
 You can find the results under [output/feature_valuation](output/feature_valuation).
 
+## Data Valuation
+
+### Synthetic Data
+
+To reproduce the results of this experiment use:
+
+```shell
+dvc repro data-valuation-synthetic
+```
+
+You can find the results under [output/data_valuation_synthetic](output/data_valuation_synthetic).
+
+### Dog vs Fish Dataset
+
+To reproduce the results of this experiment use:
+
+```shell
+dvc repro data-valuation-dog-vs-fish
+```
+
+You can find the results under [output/data_valuation_dog_vs_fish](output/data_valuation_dog_vs_fish).
+
 ## Fixing Misalabeled Data
 
 To reproduce the results of this experiment use:

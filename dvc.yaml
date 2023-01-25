@@ -17,15 +17,15 @@ stages:
     - src/ml_reproducibility_challenge/experiments/noisy_data_experiment.py
     outs:
     - output/noisy_data/
-  data-removal-synthetic:
-    cmd: python -m ml_reproducibility_challenge.experiments.data_removal_synthetic_experiment
+  data-valuation-synthetic:
+    cmd: python -m ml_reproducibility_challenge.experiments.data_valuation_synthetic_experiment
     deps:
-    - src/ml_reproducibility_challenge/experiments/data_removal_synthetic_experiment.py
+    - src/ml_reproducibility_challenge/experiments/data_valuation_synthetic_experiment.py
     outs:
-    - output/data_removal_synthetic/
-  data-removal-dog-vs-fish:
-    cmd: python -m ml_reproducibility_challenge.experiments.data_removal_dog_vs_fish_experiment
+    - output/data_valuation_synthetic/
+  data-valution-dog-vs-fish:
+    cmd: python -m ml_reproducibility_challenge.experiments.data_valuation_dog_vs_fish_experiment
     deps:
-    - src/ml_reproducibility_challenge/experiments/data_removal_dog_vs_fish_experiment.py
+    - src/ml_reproducibility_challenge/experiments/data_valuation_dog_vs_fish_experiment.py
     outs:
-    - output/data_removal_dog_vs_fish/
+    - output/data_valuation_dog_vs_fish/
