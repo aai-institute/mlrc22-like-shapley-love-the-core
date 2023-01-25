@@ -1,12 +1,15 @@
 import os
 import random
 import tarfile
+from typing import Any, Sequence
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
 import torch
 from datasets import DatasetDict, load_dataset, load_from_disk
+from matplotlib.axes import Axes
 from numpy.typing import NDArray
 from pydvl.utils import Dataset
 from sklearn.datasets import fetch_openml, load_wine
@@ -38,6 +41,7 @@ __all__ = [
     "create_enron_spam_datasets",
     "create_synthetic_dataset",
     "create_dog_vs_fish_dataset",
+    "shaded_mean_confidence_interval",
 ]
 
 
@@ -387,3 +391,41 @@ def create_dog_vs_fish_dataset(seed: int = RANDOM_SEED) -> Dataset:
     )
 
     return dataset
+
+
+def shaded_mean_confidence_interval(
+    data: pd.DataFrame,
+    abscissa: Sequence[Any] | None = None,
+    alpha: float = 0.05,
+    mean_color: str | None = "dodgerblue",
+    shade_color: str | None = "lightblue",
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    ax: Axes | None = None,
+    **kwargs,
+) -> Axes:
+    """Modified version of the `shaded_mean_std()` function defined in pyDVL."""
+    assert len(data.shape) == 2
+    mean = data.mean(axis=0)
+    quantiles = data.quantile([alpha, 1 - alpha], axis=0)
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    if abscissa is None:
+        abscissa = list(range(data.shape[1]))
+
+    ax.fill_between(
+        abscissa,
+        quantiles.loc[alpha],
+        quantiles.loc[1 - alpha],
+        alpha=0.3,
+        color=shade_color,
+    )
+    ax.plot(abscissa, mean, color=mean_color, **kwargs)
+
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+    return ax
