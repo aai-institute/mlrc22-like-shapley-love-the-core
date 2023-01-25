@@ -21,7 +21,10 @@ from tqdm.auto import tqdm, trange
 from tqdm.contrib.logging import tqdm_logging_redirect
 
 from ml_reproducibility_challenge.constants import OUTPUT_DIR, RANDOM_SEED
-from ml_reproducibility_challenge.utils import create_synthetic_dataset, set_random_seed
+from ml_reproducibility_challenge.utils import (
+    create_dog_vs_fish_dataset,
+    set_random_seed,
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -32,7 +35,7 @@ logging.basicConfig(
 sns.set_theme(style="whitegrid", palette="pastel")
 sns.set_context("paper", font_scale=1.5)
 
-EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "data_removal_synthetic"
+EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "data_removal_dog_vs_fish"
 EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 
 mean_colors = ["dodgerblue", "darkorange", "limegreen", "indianred", "darkorchid"]
@@ -78,10 +81,6 @@ def plot_utility_over_removal_percentages(
 def run():
     parallel_config = ParallelConfig(backend="ray", logging_level=logging.ERROR)
 
-    n_features = 50
-    n_train_samples = 200
-    n_test_samples = 5000
-
     removal_percentages = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35]
     method_names = [
         "TMC Shapley",
@@ -107,12 +106,7 @@ def run():
 
             random_state = np.random.RandomState(RANDOM_SEED)
 
-            dataset, _ = create_synthetic_dataset(
-                n_features=n_features,
-                n_train_samples=n_train_samples,
-                n_test_samples=n_test_samples,
-                random_state=random_state,
-            )
+            dataset = create_dog_vs_fish_dataset(RANDOM_SEED)
 
             for method_name in tqdm(method_names, desc="Method", leave=False):
                 logger.info(f"{method_name=}")

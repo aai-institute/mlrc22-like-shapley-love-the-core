@@ -23,3 +23,9 @@ stages:
     - src/ml_reproducibility_challenge/experiments/data_removal_synthetic_experiment.py
     outs:
     - output/data_removal_synthetic/
+  data-removal-dog-vs-fish:
+    cmd: python -m ml_reproducibility_challenge.experiments.data_removal_dog_vs_fish_experiment
+    deps:
+    - src/ml_reproducibility_challenge/experiments/data_removal_dog_vs_fish_experiment.py
+    outs:
+    - output/data_removal_dog_vs_fish/
