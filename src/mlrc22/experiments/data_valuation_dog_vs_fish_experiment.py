@@ -102,8 +102,6 @@ def run():
         for budget in tqdm(budget_list, desc="Budget", leave=True):
             logger.info(f"Using number of iterations {budget}")
 
-            random_state = np.random.RandomState(RANDOM_SEED)
-
             dataset = create_dog_vs_fish_dataset(RANDOM_SEED)
 
             for method_name in tqdm(method_names, desc="Method", leave=False):
@@ -111,7 +109,7 @@ def run():
 
                 model = make_pipeline(
                     StandardScaler(),
-                    LogisticRegression(solver="liblinear", random_state=random_state),
+                    LogisticRegression(solver="liblinear"),
                 )
 
                 logger.info("Creating utility")

@@ -82,11 +82,11 @@ def run():
     n_jobs = 4
     logger.info(f"Using number of jobs {n_jobs}")
 
-    random_state = np.random.RandomState(RANDOM_SEED)
-
     accuracies = []
 
     for dataset_name in ["House", "Medical", "Chemical"]:
+        random_state = np.random.RandomState(RANDOM_SEED)
+
         if dataset_name == "House":
             dataset = create_house_voting_dataset(random_state=random_state)
         elif dataset_name == "Medical":
@@ -102,7 +102,7 @@ def run():
 
         model = make_pipeline(
             StandardScaler(),
-            LogisticRegression(max_iter=1000, random_state=random_state),
+            LogisticRegression(max_iter=1000),
         )
 
         logger.info(
@@ -142,7 +142,8 @@ def run():
                                 n_jobs=n_jobs,
                                 config=parallel_config,
                                 options={
-                                    "max_iters": 10000,
+                                    "solver": "SCS",
+                                    "max_iters": 30000,
                                 },
                             )
                         except ValueError:

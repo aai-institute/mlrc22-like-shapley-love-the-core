@@ -118,9 +118,11 @@ def run():
             for method_name in tqdm(method_names, desc="Method", leave=False):
                 logger.info(f"{method_name=}")
 
+                # We do not set the random_state in the model itself
+                # because we are testing the method and not the model
                 model = make_pipeline(
                     StandardScaler(),
-                    LogisticRegression(solver="liblinear", random_state=random_state),
+                    LogisticRegression(solver="liblinear"),
                 )
 
                 logger.info("Creating utility")

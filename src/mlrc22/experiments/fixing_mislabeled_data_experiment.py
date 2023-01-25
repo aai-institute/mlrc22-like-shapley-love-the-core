@@ -121,7 +121,7 @@ def run():
 
     scorer_names = ["accuracy", "f1", "average_precision"]
     removal_percentages = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35]
-    label_flip_percentages = [0.10, 0.20, 0.30]
+    label_flip_percentages = [0.20, 0.30]
     method_names = ["Random", "Least Core", "TMC Shapley"]
 
     n_iterations = 5000
@@ -135,14 +135,15 @@ def run():
 
     model = GaussianNB()
 
-    random_state = np.random.RandomState(RANDOM_SEED)
-
     all_scores = []
 
     with tqdm_logging_redirect():
         for flip_percentage in tqdm(
             label_flip_percentages, desc="Flip Percentage", leave=True
         ):
+
+            random_state = np.random.RandomState(RANDOM_SEED)
+
             logger.info(f"{flip_percentage=}")
             logger.info(f"Creating datasets")
             (
@@ -189,7 +190,8 @@ def run():
                                 n_jobs=n_jobs,
                                 config=parallel_config,
                                 options={
-                                    "max_iters": 10000,
+                                    "solver": "SCS",
+                                    "max_iters": 30000,
                                 },
                             )
                         else:
@@ -239,6 +241,7 @@ def run():
         scorer_names=scorer_names,
         label_flip_percentages=label_flip_percentages,
         method_names=method_names,
+        removal_percentages=removal_percentages,
     )
     plot_flip_accuracy_over_removal_percentages(
         scores_df, label_flip_percentages=label_flip_percentages

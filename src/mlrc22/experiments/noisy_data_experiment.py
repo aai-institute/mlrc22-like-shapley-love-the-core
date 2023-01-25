@@ -162,7 +162,8 @@ def run():
                             n_jobs=n_jobs,
                             config=parallel_config,
                             options={
-                                "max_iters": 10000,
+                                "solver": "SCS",
+                                "max_iters": 30000,
                             },
                         )
                         values = valuation.values
@@ -173,8 +174,9 @@ def run():
                     mask = np.ones(len(values), dtype=bool)
                     mask[noisy_indices] = False
 
-                    total_utility = np.sum(np.abs(values))
-                    total_clean_values = np.sum(np.abs(values[mask]))
+                    shifted_values = values + np.min(values)
+                    total_utility = np.sum(shifted_values)
+                    total_clean_values = np.sum(shifted_values[mask])
                     clean_values_percentage = total_clean_values / total_utility
 
                     results = {
