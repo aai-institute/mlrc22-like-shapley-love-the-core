@@ -73,7 +73,7 @@ def plot_clean_data_vs_noisy_data_utility(
         df = results_df[(results_df["noise_fraction"] == noise_fraction)]
         df = (
             df.groupby("noise_level")[
-                ["total_clean_values", "total_noisy_values", "total_utility"]
+                ["total_clean_utility", "total_noisy_utility", "total_utility"]
             ]
             .apply(lambda df: df.reset_index(drop=True))
             .unstack()
@@ -81,7 +81,7 @@ def plot_clean_data_vs_noisy_data_utility(
         fig, ax = plt.subplots()
         for i, (column, ylabel) in enumerate(
             zip(
-                ["total_clean_values", "total_noisy_values", "total_utility"],
+                ["total_clean_utility", "total_noisy_utility", "total_utility"],
                 ["Clean Data", "Noisy Data", "Total Utility"],
             )
         ):
@@ -114,7 +114,7 @@ def run():
     n_test_samples = 5000
 
     noise_levels = [0.0, 0.1, 0.2, 0.3, 0.4]
-    noise_fractions = [0.1, 0.3]
+    noise_fractions = [0.2, 0.4]
 
     n_iterations = 5000
     logger.info(f"Using number of iterations {n_iterations}")
@@ -131,7 +131,9 @@ def run():
 
     with tqdm_logging_redirect():
         for noise_fraction in tqdm(noise_fractions, desc="Noise Fraction", leave=True):
-            for noise_level in tqdm(noise_levels, desc="Noise Level", leave=True):
+            logger.info(f"{noise_fraction=}")
+            for noise_level in tqdm(noise_levels, desc="Noise Level", leave=False):
+                logger.info(f"{noise_level=}")
                 dataset, noisy_indices = create_synthetic_dataset(
                     n_features=n_features,
                     n_train_samples=n_train_samples,
@@ -142,18 +144,19 @@ def run():
                 )
                 logger.info(f"Number of samples in dataset: {len(dataset)}")
 
-                model = make_pipeline(
-                    StandardScaler(),
-                    LogisticRegression(solver="liblinear", random_state=random_state),
-                )
-                logger.info(f"Creating utility")
-                utility = Utility(
-                    data=dataset,
-                    model=model,
-                    enable_cache=False,
-                )
                 for _ in trange(n_repetitions, desc="Repetitions", leave=False):
+                    model = make_pipeline(
+                        StandardScaler(),
+                        LogisticRegression(solver="liblinear"),
+                    )
+                    logger.info(f"Creating utility")
+                    utility = Utility(
+                        data=dataset,
+                        model=model,
+                        enable_cache=False,
+                    )
                     logger.info("Computing approximate Least Core values")
+
                     try:
                         valuation = montecarlo_least_core(
                             utility,
@@ -174,17 +177,23 @@ def run():
                     mask = np.ones(len(values), dtype=bool)
                     mask[noisy_indices] = False
 
-                    shifted_values = values + np.min(values)
-                    total_utility = np.sum(shifted_values)
-                    total_clean_values = np.sum(shifted_values[mask])
-                    clean_values_percentage = total_clean_values / total_utility
+                    shifted_values = values - np.min(values)
+                    total_shifted_utility = np.sum(shifted_values)
+                    total_shifted_clean_values = np.sum(shifted_values[mask])
+                    shifted_clean_values_percentage = (
+                        total_shifted_clean_values / total_shifted_utility
+                    )
+
+                    total_utility = np.sum(values)
+                    total_clean_utility = np.sum(values[mask])
+                    total_noisy_utility = total_utility - total_clean_utility
 
                     results = {
                         "noise_level": noise_level,
                         "noise_fraction": noise_fraction,
-                        "clean_values_percentage": clean_values_percentage,
-                        "total_clean_values": total_clean_values,
-                        "total_noisy_values": total_utility - total_clean_values,
+                        "clean_values_percentage": shifted_clean_values_percentage,
+                        "total_clean_utility": total_clean_utility,
+                        "total_noisy_utility": total_noisy_utility,
                         "total_utility": total_utility,
                     }
                     all_results.append(results)

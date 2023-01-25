@@ -3,10 +3,8 @@ import logging
 from contextlib import redirect_stderr
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
-from pydvl.reporting.plots import shaded_mean_std
 from pydvl.reporting.scores import compute_removal_score
 from pydvl.utils import Utility
 from pydvl.utils.config import ParallelConfig
@@ -21,7 +19,11 @@ from tqdm.auto import tqdm, trange
 from tqdm.contrib.logging import tqdm_logging_redirect
 
 from mlrc22.constants import OUTPUT_DIR, RANDOM_SEED
-from mlrc22.utils import create_dog_vs_fish_dataset, set_random_seed
+from mlrc22.utils import (
+    create_dog_vs_fish_dataset,
+    set_random_seed,
+    shaded_mean_confidence_interval,
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -57,7 +59,7 @@ def plot_utility_over_removal_percentages(
                     & (scores_df["type"] == type)
                 ].drop(columns=["method", "budget", "type"])
 
-                shaded_mean_std(
+                shaded_mean_confidence_interval(
                     df,
                     abscissa=removal_percentages,
                     mean_color=mean_colors[i],
