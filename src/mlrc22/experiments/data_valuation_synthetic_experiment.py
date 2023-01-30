@@ -2,10 +2,8 @@ import io
 import logging
 from contextlib import redirect_stderr
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from pydvl.reporting.scores import compute_removal_score
 from pydvl.utils import Utility
 from pydvl.utils.config import ParallelConfig
@@ -20,66 +18,20 @@ from tqdm.auto import tqdm, trange
 from tqdm.contrib.logging import tqdm_logging_redirect
 
 from mlrc22.constants import OUTPUT_DIR, RANDOM_SEED
-from mlrc22.utils import (
-    create_synthetic_dataset,
-    set_random_seed,
-    shaded_mean_confidence_interval,
-)
+from mlrc22.dataset import create_synthetic_dataset
+from mlrc22.plotting import plot_utility_over_removal_percentages
+from mlrc22.utils import set_random_seed, setup_logger, setup_plotting
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-)
+logger = setup_logger()
 
-sns.set_theme(style="whitegrid", palette="pastel")
-sns.set_context("paper", font_scale=1.5)
-
-EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "data_valuation_synthetic"
-EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
-
-mean_colors = ["dodgerblue", "darkorange", "limegreen", "indianred", "darkorchid"]
-shade_colors = ["lightskyblue", "gold", "seagreen", "firebrick", "plum"]
-
-
-def plot_utility_over_removal_percentages(
-    scores_df: pd.DataFrame,
-    *,
-    method_names: list[str],
-    budget_list: list[int],
-    removal_percentages: list[float],
-) -> None:
-    for type in ["best", "worst"]:
-        for budget in budget_list:
-            fig, ax = plt.subplots()
-
-            for i, method_name in enumerate(method_names):
-                df = scores_df[
-                    (scores_df["method"] == method_name)
-                    & (scores_df["budget"] == budget)
-                    & (scores_df["type"] == type)
-                ].drop(columns=["method", "budget", "type"])
-
-                shaded_mean_confidence_interval(
-                    df,
-                    abscissa=removal_percentages,
-                    mean_color=mean_colors[i],
-                    shade_color=shade_colors[i],
-                    xlabel="Percentage Removal",
-                    ylabel="Accuracy",
-                    label=f"{method_name}",
-                    ax=ax,
-                )
-            plt.legend(loc="lower left")
-            fig.tight_layout()
-            fig.savefig(
-                EXPERIMENT_OUTPUT_DIR
-                / f"utility_over_removal_percentages_{type}_{budget}.pdf",
-                bbox_inches="tight",
-            )
+setup_plotting()
+set_random_seed(RANDOM_SEED)
 
 
 def run():
+    experiment_output_dir = OUTPUT_DIR / "data_valuation_synthetic"
+    experiment_output_dir.mkdir(exist_ok=True)
+
     parallel_config = ParallelConfig(backend="ray", logging_level=logging.ERROR)
 
     n_features = 50
@@ -205,16 +157,16 @@ def run():
 
     scores_df = pd.DataFrame(all_scores)
 
-    scores_df.to_csv(EXPERIMENT_OUTPUT_DIR / "scores.csv", index=False)
+    scores_df.to_csv(experiment_output_dir / "scores.csv", index=False)
 
     plot_utility_over_removal_percentages(
         scores_df,
         budget_list=budget_list,
         method_names=method_names,
         removal_percentages=removal_percentages,
+        experiment_output_dir=experiment_output_dir,
     )
 
 
 if __name__ == "__main__":
-    set_random_seed(RANDOM_SEED)
     run()

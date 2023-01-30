@@ -2,11 +2,8 @@ import io
 import logging
 from contextlib import redirect_stderr
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from pydvl.reporting.plots import shaded_mean_std
 from pydvl.reporting.scores import compute_removal_score
 from pydvl.utils import Utility
 from pydvl.utils.config import ParallelConfig
@@ -18,105 +15,23 @@ from tqdm.auto import tqdm, trange
 from tqdm.contrib.logging import tqdm_logging_redirect
 
 from mlrc22.constants import OUTPUT_DIR, RANDOM_SEED
-from mlrc22.utils import create_enron_spam_datasets, set_random_seed
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+from mlrc22.dataset import create_enron_spam_datasets
+from mlrc22.plotting import (
+    plot_flip_accuracy_over_removal_percentages,
+    plot_flipped_utility_over_removal_percentages,
 )
+from mlrc22.utils import set_random_seed, setup_logger, setup_plotting
 
-sns.set_theme(style="whitegrid", palette="pastel")
-sns.set_context("paper", font_scale=1.5)
+logger = setup_logger()
 
-EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "fixing_mislabeled_data"
-EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
-
-mean_colors = ["darkorchid", "limegreen", "dodgerblue"]
-shade_colors = ["plum", "seagreen", "lightskyblue"]
-
-
-def plot_flip_accuracy_over_removal_percentages(
-    scores_df: pd.DataFrame, *, label_flip_percentages: list[float]
-) -> None:
-    for flip_percentage in label_flip_percentages:
-        fig, ax = plt.subplots()
-        sns.boxplot(
-            data=scores_df,
-            x="method",
-            y="flip_accuracy",
-            hue="scorer",
-            palette={
-                "accuracy": "indianred",
-                "average_precision": "darkorchid",
-                "f1": "dodgerblue",
-            },
-            ax=ax,
-        )
-        sns.move_legend(
-            ax,
-            "lower center",
-            bbox_to_anchor=(0.5, 1),
-            ncol=3,
-            title=None,
-            frameon=False,
-        )
-        ax.set_ylim(0.0, 1.1)
-        ax.set_xlabel("Method")
-        ax.set_ylabel("Flipped Data Points Accuracy")
-        fig.tight_layout()
-        fig.savefig(
-            EXPERIMENT_OUTPUT_DIR
-            / f"flip_accuracy_over_removal_percentages_{flip_percentage:.2f}.pdf",
-            bbox_inches="tight",
-        )
-
-
-def plot_utility_over_removal_percentages(
-    scores_df: pd.DataFrame,
-    *,
-    scorer_names: list[str],
-    label_flip_percentages: list[float],
-    method_names: list[str],
-    removal_percentages: list[float],
-) -> None:
-    for scorer in scorer_names:
-        if scorer == "accuracy":
-            ylabel = "Accuracy"
-        elif scorer == "f1":
-            ylabel = "F1 Score"
-        else:
-            ylabel = "Average Precision"
-
-        for flip_percentage in label_flip_percentages:
-            fig, ax = plt.subplots()
-
-            for i, method_name in enumerate(method_names):
-                df = scores_df[
-                    (scores_df["method"] == method_name)
-                    & (scores_df["scorer"] == scorer)
-                    & (scores_df["flip_percentage"] == flip_percentage)
-                ].drop(columns=["method", "scorer", "flip_percentage", "flip_accuracy"])
-                shaded_mean_std(
-                    df,
-                    abscissa=removal_percentages,
-                    mean_color=mean_colors[i],
-                    shade_color=shade_colors[i],
-                    xlabel="Percentage Removal",
-                    ylabel=ylabel,
-                    label=f"{method_name}",
-                    ax=ax,
-                )
-            plt.legend(loc="lower left")
-            fig.tight_layout()
-            fig.savefig(
-                EXPERIMENT_OUTPUT_DIR
-                / f"utility_over_removal_percentages_{scorer}_{flip_percentage:.2f}.pdf",
-                bbox_inches="tight",
-            )
+setup_plotting()
+set_random_seed(RANDOM_SEED)
 
 
 def run():
+    experiment_output_dir = OUTPUT_DIR / "fixing_mislabeled_data"
+    experiment_output_dir.mkdir(exist_ok=True)
+
     parallel_config = ParallelConfig(backend="ray", logging_level=logging.ERROR)
 
     scorer_names = ["accuracy", "f1", "average_precision"]
@@ -139,7 +54,6 @@ def run():
 
     random_state = np.random.RandomState(RANDOM_SEED)
 
-    """
     with tqdm_logging_redirect():
         for flip_percentage in tqdm(
             label_flip_percentages, desc="Flip Percentage", leave=True
@@ -155,7 +69,9 @@ def run():
                     training_dataset,
                     testing_dataset,
                     flipped_indices,
-                ) = create_enron_spam_datasets(flip_percentage, random_state=random_state)
+                ) = create_enron_spam_datasets(
+                    flip_percentage, random_state=random_state
+                )
                 logger.info(f"Training dataset size: {len(training_dataset)}")
                 logger.info(f"Testing dataset size: {len(testing_dataset)}")
 
@@ -235,23 +151,22 @@ def run():
 
     scores_df = pd.DataFrame(all_scores)
 
-    scores_df.to_csv(EXPERIMENT_OUTPUT_DIR / "scores.csv", index=False)
-    """
+    scores_df.to_csv(experiment_output_dir / "scores.csv", index=False)
 
-    scores_df = pd.read_csv(EXPERIMENT_OUTPUT_DIR / "scores.csv")
-
-    plot_utility_over_removal_percentages(
+    plot_flipped_utility_over_removal_percentages(
         scores_df,
         scorer_names=scorer_names,
         label_flip_percentages=label_flip_percentages,
         method_names=method_names,
         removal_percentages=removal_percentages,
+        experiment_output_dir=experiment_output_dir,
     )
     plot_flip_accuracy_over_removal_percentages(
-        scores_df, label_flip_percentages=label_flip_percentages
+        scores_df,
+        label_flip_percentages=label_flip_percentages,
+        experiment_output_dir=experiment_output_dir,
     )
 
 
 if __name__ == "__main__":
-    set_random_seed(RANDOM_SEED)
     run()

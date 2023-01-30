@@ -35,19 +35,26 @@ dvc repro
 
 ## Feature Valuation
 
-This experiments uses 3 small scale datasets with a number of features between
-10 and 14. It uses monte carlo least core to compute feature valuations
-and then computes, for a varying number of computational budgets, the percentage
-of all feature coalitions that satisfy the least core constraints with respect
-to the true deficit $e^{*}$ (i.e. the exact least core value).
+### Least Core
 
 To reproduce the results of this experiment use:
 
 ```shell
-dvc repro feature-valuation
+dvc repro feature-valuation-least-core
 ```
 
-You can find the results under [output/feature_valuation](output/feature_valuation).
+You can find the results under [output/feature_valuation_least_core](output/feature_valuation_least_core).
+
+### Nucleolus
+
+To reproduce the results of this experiment use:
+
+```shell
+dvc repro feature-valuation-nucleolus
+```
+
+You can find the results under [output/feature_valuation_nucleolus](output/feature_valuation_nucleolus).
+
 
 ## Data Valuation
 

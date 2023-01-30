@@ -1,10 +1,7 @@
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from pydvl.reporting.plots import shaded_mean_std
 from pydvl.utils import Utility
 from pydvl.utils.config import ParallelConfig
 from pydvl.value.least_core import montecarlo_least_core
@@ -15,98 +12,23 @@ from tqdm.auto import tqdm, trange
 from tqdm.contrib.logging import tqdm_logging_redirect
 
 from mlrc22.constants import OUTPUT_DIR, RANDOM_SEED
-from mlrc22.utils import create_synthetic_dataset, set_random_seed
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+from mlrc22.dataset import create_synthetic_dataset
+from mlrc22.plotting import (
+    plot_clean_data_utility_percentage,
+    plot_clean_data_vs_noisy_data_utility,
 )
+from mlrc22.utils import set_random_seed, setup_logger, setup_plotting
 
-sns.set_theme(style="whitegrid", palette="pastel")
-sns.set_context("paper", font_scale=1.5)
+logger = setup_logger()
 
-EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "noisy_data"
-EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
-
-mean_colors = ["limegreen", "indianred", "dodgerblue"]
-shade_colors = ["seagreen", "firebrick", "lightskyblue"]
-
-
-def plot_clean_data_utility_percentage(
-    results_df: pd.DataFrame, *, noise_fractions: list[float], noise_levels: list[float]
-) -> None:
-    fig, ax = plt.subplots()
-
-    for i, noise_fraction in enumerate(noise_fractions):
-        df = results_df[(results_df["noise_fraction"] == noise_fraction)]
-        df = (
-            df.groupby("noise_level")["clean_values_percentage"]
-            .apply(lambda df: df.reset_index(drop=True))
-            .unstack()
-        )
-        shaded_mean_std(
-            df,
-            abscissa=noise_levels,
-            mean_color=mean_colors[i],
-            shade_color=shade_colors[i],
-            xlabel="Noise Level",
-            ylabel="Percentage of the Total Utility",
-            label=f"Noise Fraction: {noise_fraction:.1f}",
-            ax=ax,
-        )
-
-    plt.legend(
-        bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left", mode="expand", ncol=2
-    )
-    fig.tight_layout()
-    fig.savefig(
-        EXPERIMENT_OUTPUT_DIR / f"clean_data_utility_percentage.pdf",
-        bbox_inches="tight",
-    )
-
-
-def plot_clean_data_vs_noisy_data_utility(
-    results_df: pd.DataFrame, *, noise_fractions: list[float], noise_levels: list[float]
-) -> None:
-    for noise_fraction in noise_fractions:
-        df = results_df[(results_df["noise_fraction"] == noise_fraction)]
-        df = (
-            df.groupby("noise_level")[
-                ["total_clean_utility", "total_noisy_utility", "total_utility"]
-            ]
-            .apply(lambda df: df.reset_index(drop=True))
-            .unstack()
-        )
-        fig, ax = plt.subplots()
-        for i, (column, ylabel) in enumerate(
-            zip(
-                ["total_clean_utility", "total_noisy_utility", "total_utility"],
-                ["Clean Data", "Noisy Data", "Total Utility"],
-            )
-        ):
-            shaded_mean_std(
-                df[[column]],
-                abscissa=noise_levels,
-                mean_color=mean_colors[i],
-                shade_color=shade_colors[i],
-                xlabel="Noise Level",
-                ylabel="Utility",
-                label=ylabel,
-                ax=ax,
-            )
-        plt.legend(
-            bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left", mode="expand", ncol=3
-        )
-        fig.tight_layout()
-        fig.savefig(
-            EXPERIMENT_OUTPUT_DIR
-            / f"clean_data_vs_noisy_data_utility_{noise_fraction:.2f}.pdf",
-            bbox_inches="tight",
-        )
+setup_plotting()
+set_random_seed(RANDOM_SEED)
 
 
 def run():
+    experiment_output_dir = OUTPUT_DIR / "noisy_data"
+    experiment_output_dir.mkdir(exist_ok=True)
+
     parallel_config = ParallelConfig(backend="ray", logging_level=logging.ERROR)
 
     n_features = 50
@@ -201,17 +123,22 @@ def run():
 
     results_df = pd.DataFrame(all_results)
 
-    results_df.to_csv(EXPERIMENT_OUTPUT_DIR / "results.csv", index=False)
+    results_df.to_csv(experiment_output_dir / "results.csv", index=False)
 
     plot_clean_data_utility_percentage(
-        results_df, noise_fractions=noise_fractions, noise_levels=noise_levels
+        results_df,
+        noise_fractions=noise_fractions,
+        noise_levels=noise_levels,
+        experiment_output_dir=experiment_output_dir,
     )
 
     plot_clean_data_vs_noisy_data_utility(
-        results_df, noise_fractions=noise_fractions, noise_levels=noise_levels
+        results_df,
+        noise_fractions=noise_fractions,
+        noise_levels=noise_levels,
+        experiment_output_dir=experiment_output_dir,
     )
 
 
 if __name__ == "__main__":
-    set_random_seed(RANDOM_SEED)
     run()
