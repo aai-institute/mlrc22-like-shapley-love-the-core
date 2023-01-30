@@ -100,47 +100,46 @@ def run():
     n_repetitions = 20
     logger.info(f"Using number of repetitions {n_repetitions}")
 
-    n_jobs = 4
+    n_jobs = 8
     logger.info(f"Using number of jobs {n_jobs}")
 
     all_scores = []
 
+    random_state = np.random.RandomState(RANDOM_SEED)
+
     with tqdm_logging_redirect():
         for budget in tqdm(budget_list, desc="Budget", leave=True):
             logger.info(f"Using number of iterations {budget}")
+            for _ in trange(
+                n_repetitions,
+                desc="Repetitions",
+                leave=False,
+            ):
 
-            random_state = np.random.RandomState(RANDOM_SEED)
-
-            dataset, _ = create_synthetic_dataset(
-                n_features=n_features,
-                n_train_samples=n_train_samples,
-                n_test_samples=n_test_samples,
-                random_state=random_state,
-            )
-
-            for method_name in tqdm(method_names, desc="Method", leave=False):
-                logger.info(f"{method_name=}")
-
-                # We do not set the random_state in the model itself
-                # because we are testing the method and not the model
-                model = make_pipeline(
-                    StandardScaler(),
-                    LogisticRegression(solver="liblinear"),
+                dataset, _ = create_synthetic_dataset(
+                    n_features=n_features,
+                    n_train_samples=n_train_samples,
+                    n_test_samples=n_test_samples,
+                    random_state=random_state,
                 )
 
-                logger.info("Creating utility")
-                utility = Utility(
-                    data=dataset,
-                    model=model,
-                    score_range=(0.0, 1.0),
-                    enable_cache=False,
-                )
+                for method_name in tqdm(method_names, desc="Method", leave=False):
+                    logger.info(f"{method_name=}")
 
-                for _ in trange(
-                    n_repetitions,
-                    desc=f"Repetitions '{method_name}'",
-                    leave=False,
-                ):
+                    # We do not set the random_state in the model itself
+                    # because we are testing the method and not the model
+                    model = make_pipeline(
+                        StandardScaler(), LogisticRegression(solver="liblinear")
+                    )
+
+                    logger.info("Creating utility")
+                    utility = Utility(
+                        data=dataset,
+                        model=model,
+                        score_range=(0.0, 1.0),
+                        enable_cache=False,
+                    )
+
                     if method_name == "Random":
                         values = ValuationResult.from_random(size=len(utility.data))
                     elif method_name == "Leave One Out":

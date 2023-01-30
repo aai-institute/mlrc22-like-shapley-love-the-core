@@ -295,10 +295,7 @@ def download_and_filter_imagenet(seed: int) -> DatasetDict:
 
 def generate_inception_v3_embeddings(
     ds: DatasetDict,
-) -> tuple[
-    tuple[NDArray[np.float_], NDArray[np.float_]],
-    tuple[NDArray[np.float_], NDArray[np.float_]],
-]:
+) -> tuple[NDArray[np.float_], NDArray[np.float_]]:
     # Instantiate Inception V3 model with pretrained weights
     pretrained_weights = Inception_V3_Weights.IMAGENET1K_V1
     inception_model = inception_v3(weights=pretrained_weights)
@@ -346,12 +343,10 @@ def generate_inception_v3_embeddings(
             val_inputs.append(output.numpy())
             val_labels.append(label.numpy())
 
-    x_train = np.concatenate(train_inputs, axis=0)
-    y_train = np.concatenate(train_labels, axis=0)
-    x_test = np.concatenate(val_inputs, axis=0)
-    y_test = np.concatenate(train_labels, axis=0)
+    X = np.concatenate(train_inputs + val_inputs, axis=0)
+    y = np.concatenate(train_labels + val_labels, axis=0)
 
-    return (x_train, y_train), (x_test, y_test)
+    return X, y
 
 
 def create_dog_vs_fish_dataset(seed: int = RANDOM_SEED) -> Dataset:
@@ -359,8 +354,7 @@ def create_dog_vs_fish_dataset(seed: int = RANDOM_SEED) -> Dataset:
     dog_vs_fish_dataset_dir.mkdir(exist_ok=True)
 
     filtered_imagenet_dataset_dir = dog_vs_fish_dataset_dir / "filtered_imagenet"
-    train_array_file = dog_vs_fish_dataset_dir / "train_arrays.npz"
-    val_array_file = dog_vs_fish_dataset_dir / "val_arrays.npz"
+    arrays_file = dog_vs_fish_dataset_dir / "arrays.npz"
 
     if filtered_imagenet_dataset_dir.is_dir():
         dog_fish_ds = load_from_disk(os.fspath(filtered_imagenet_dataset_dir))
@@ -369,26 +363,22 @@ def create_dog_vs_fish_dataset(seed: int = RANDOM_SEED) -> Dataset:
         # Save dataset to disk to avoid redoing the work
         dog_fish_ds.save_to_disk(filtered_imagenet_dataset_dir)
 
-    if train_array_file.is_file() and val_array_file.is_file():
-        array_dict = np.load(train_array_file)
-        x_train, y_train = array_dict["x_train"], array_dict["y_train"]
-        array_dict = np.load(val_array_file)
-        x_test, y_test = array_dict["x_test"], array_dict["y_test"]
+    if arrays_file.is_file():
+        array_dict = np.load(arrays_file)
+        X, y = array_dict["X"], array_dict["y"]
     else:
-        (x_train, y_train), (x_test, y_test) = generate_inception_v3_embeddings(
-            dog_fish_ds
-        )
+        X, y = generate_inception_v3_embeddings(dog_fish_ds)
         # Save arrays to disk to avoid redoing the work
-        np.savez(train_array_file, x_train=x_train, y_train=y_train)
-        np.savez(val_array_file, x_test=x_test, y_test=y_test)
+        np.savez(arrays_file, X=X, y=y)
 
-    dataset = Dataset(
-        x_train=x_train,
-        y_train=y_train,
-        x_test=x_test,
-        y_test=y_test,
-        target_names=["dog", "fish"],
+    dataset = Dataset.from_arrays(
+        X=X,
+        y=y,
+        train_size=0.5,
+        stratify_by_target=True,
     )
+
+    dataset.target_names = ["dog", "fish"]
 
     return dataset
 

@@ -122,7 +122,7 @@ def run():
     n_repetitions = 5
     logger.info(f"Using number of repetitions {n_repetitions}")
 
-    n_jobs = 4
+    n_jobs = 8
     logger.info(f"Using number of jobs {n_jobs}")
 
     random_state = np.random.RandomState(RANDOM_SEED)
@@ -134,17 +134,18 @@ def run():
             logger.info(f"{noise_fraction=}")
             for noise_level in tqdm(noise_levels, desc="Noise Level", leave=False):
                 logger.info(f"{noise_level=}")
-                dataset, noisy_indices = create_synthetic_dataset(
-                    n_features=n_features,
-                    n_train_samples=n_train_samples,
-                    n_test_samples=n_test_samples,
-                    random_state=random_state,
-                    noise_level=noise_level,
-                    noise_fraction=noise_fraction,
-                )
-                logger.info(f"Number of samples in dataset: {len(dataset)}")
 
                 for _ in trange(n_repetitions, desc="Repetitions", leave=False):
+                    dataset, noisy_indices = create_synthetic_dataset(
+                        n_features=n_features,
+                        n_train_samples=n_train_samples,
+                        n_test_samples=n_test_samples,
+                        random_state=random_state,
+                        noise_level=noise_level,
+                        noise_fraction=noise_fraction,
+                    )
+                    logger.info(f"Number of samples in dataset: {len(dataset)}")
+
                     model = make_pipeline(
                         StandardScaler(),
                         LogisticRegression(solver="liblinear"),

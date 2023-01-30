@@ -32,8 +32,8 @@ sns.set_context("paper", font_scale=1.5)
 EXPERIMENT_OUTPUT_DIR = OUTPUT_DIR / "fixing_mislabeled_data"
 EXPERIMENT_OUTPUT_DIR.mkdir(exist_ok=True)
 
-mean_colors = ["dodgerblue", "indianred", "limegreen"]
-shade_colors = ["lightskyblue", "firebrick", "seagreen"]
+mean_colors = ["darkorchid", "limegreen", "dodgerblue"]
+shade_colors = ["plum", "seagreen", "lightskyblue"]
 
 
 def plot_flip_accuracy_over_removal_percentages(
@@ -137,47 +137,48 @@ def run():
 
     all_scores = []
 
+    random_state = np.random.RandomState(RANDOM_SEED)
+
+    """
     with tqdm_logging_redirect():
         for flip_percentage in tqdm(
             label_flip_percentages, desc="Flip Percentage", leave=True
         ):
-
-            random_state = np.random.RandomState(RANDOM_SEED)
-
             logger.info(f"{flip_percentage=}")
-            logger.info(f"Creating datasets")
-            (
-                training_dataset,
-                testing_dataset,
-                flipped_indices,
-            ) = create_enron_spam_datasets(flip_percentage, random_state=random_state)
-            logger.info(f"Training dataset size: {len(training_dataset)}")
-            logger.info(f"Testing dataset size: {len(testing_dataset)}")
-
-            for scorer_name in tqdm(scorer_names, desc="Scorer", leave=False):
-                logger.info(f"{scorer_name=}")
-                logger.info("Creating utilities")
-                training_utility = Utility(
-                    data=training_dataset,
-                    model=model,
-                    scoring=scorer_name,
-                    enable_cache=False,
-                )
-
-                testing_utility = Utility(
-                    data=testing_dataset,
-                    model=model,
-                    scoring=scorer_name,
-                    enable_cache=False,
-                )
+            for _ in trange(
+                n_repetitions,
+                desc="Repetitions",
+                leave=False,
+            ):
+                logger.info(f"Creating datasets")
+                (
+                    training_dataset,
+                    testing_dataset,
+                    flipped_indices,
+                ) = create_enron_spam_datasets(flip_percentage, random_state=random_state)
+                logger.info(f"Training dataset size: {len(training_dataset)}")
+                logger.info(f"Testing dataset size: {len(testing_dataset)}")
 
                 for method_name in tqdm(method_names, desc="Method", leave=False):
                     logger.info(f"{method_name=}")
-                    for _ in trange(
-                        n_repetitions,
-                        desc=f"Repetitions '{method_name}'",
-                        leave=False,
-                    ):
+                    for scorer_name in tqdm(scorer_names, desc="Scorer", leave=False):
+                        logger.info(f"{scorer_name=}")
+
+                        logger.info("Creating utilities")
+                        training_utility = Utility(
+                            data=training_dataset,
+                            model=model,
+                            scoring=scorer_name,
+                            enable_cache=False,
+                        )
+
+                        testing_utility = Utility(
+                            data=testing_dataset,
+                            model=model,
+                            scoring=scorer_name,
+                            enable_cache=False,
+                        )
+
                         if method_name == "Random":
                             values = ValuationResult.from_random(
                                 size=len(training_utility.data)
@@ -235,6 +236,9 @@ def run():
     scores_df = pd.DataFrame(all_scores)
 
     scores_df.to_csv(EXPERIMENT_OUTPUT_DIR / "scores.csv", index=False)
+    """
+
+    scores_df = pd.read_csv(EXPERIMENT_OUTPUT_DIR / "scores.csv")
 
     plot_utility_over_removal_percentages(
         scores_df,

@@ -23,7 +23,7 @@ stages:
     - src/mlrc22/experiments/data_valuation_synthetic_experiment.py
     outs:
     - output/data_valuation_synthetic/
-  data-valution-dog-vs-fish:
+  data-valuation-dog-vs-fish:
     cmd: python -m mlrc22.experiments.data_valuation_dog_vs_fish_experiment
     deps:
     - src/mlrc22/experiments/data_valuation_dog_vs_fish_experiment.py

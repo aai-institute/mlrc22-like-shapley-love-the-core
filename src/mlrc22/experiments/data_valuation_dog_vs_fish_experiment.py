@@ -95,7 +95,7 @@ def run():
     n_repetitions = 5
     logger.info(f"Using number of repetitions {n_repetitions}")
 
-    n_jobs = 4
+    n_jobs = 8
     logger.info(f"Using number of jobs {n_jobs}")
 
     all_scores = []
@@ -104,29 +104,29 @@ def run():
         for budget in tqdm(budget_list, desc="Budget", leave=True):
             logger.info(f"Using number of iterations {budget}")
 
-            dataset = create_dog_vs_fish_dataset(RANDOM_SEED)
+            for _ in trange(
+                n_repetitions,
+                desc="Repetitions'",
+                leave=False,
+            ):
 
-            for method_name in tqdm(method_names, desc="Method", leave=False):
-                logger.info(f"{method_name=}")
+                dataset = create_dog_vs_fish_dataset(RANDOM_SEED)
 
-                model = make_pipeline(
-                    StandardScaler(),
-                    LogisticRegression(solver="liblinear"),
-                )
+                for method_name in tqdm(method_names, desc="Method", leave=False):
+                    logger.info(f"{method_name=}")
 
-                logger.info("Creating utility")
-                utility = Utility(
-                    data=dataset,
-                    model=model,
-                    score_range=(0.0, 1.0),
-                    enable_cache=False,
-                )
+                    model = make_pipeline(
+                        StandardScaler(),
+                        LogisticRegression(solver="liblinear"),
+                    )
 
-                for _ in trange(
-                    n_repetitions,
-                    desc=f"Repetitions '{method_name}'",
-                    leave=False,
-                ):
+                    logger.info("Creating utility")
+                    utility = Utility(
+                        data=dataset,
+                        model=model,
+                        score_range=(0.0, 1.0),
+                        enable_cache=False,
+                    )
                     if method_name == "Random":
                         values = ValuationResult.from_random(size=len(utility.data))
                     elif method_name == "Leave One Out":
