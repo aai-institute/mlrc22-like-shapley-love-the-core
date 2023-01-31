@@ -43,6 +43,8 @@ def run():
     n_jobs = 8
     logger.info(f"Using number of jobs {n_jobs}")
 
+    all_values_df = None
+
     accuracies = []
 
     random_state = np.random.RandomState(RANDOM_SEED)
@@ -108,6 +110,21 @@ def run():
                         )
                         estimated_values[fraction].append(values)
 
+                        # Save raw values
+                        column_name = "nucleolus"
+                        df = (
+                            values.to_dataframe(column=column_name)
+                            .drop(columns=[f"{column_name}_stderr"])
+                            .T
+                        )
+                        df = df[sorted(df.columns)]
+                        df["fraction"] = fraction
+
+                        if all_values_df is None:
+                            all_values_df = df.copy()
+                        else:
+                            all_values_df = pd.concat([all_values_df, df])
+
                 # This is inspired the code in pyDVL's exact_least_core() function
                 # This creates the components of the following inequality:
                 # $\sum_{i\in S} x_{i} + d(S) \geq v(S) &, \forall S \subseteq N$
@@ -151,6 +168,8 @@ def run():
     accuracies_df = pd.DataFrame(accuracies)
 
     accuracies_df.to_csv(experiment_output_dir / "accuracies.csv", index=False)
+
+    all_values_df.to_csv(experiment_output_dir / "values.csv", index=False)
 
     plot_constraint_accuracy_over_coalitions(
         accuracies_df,

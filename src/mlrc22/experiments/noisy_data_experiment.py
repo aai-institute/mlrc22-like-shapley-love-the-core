@@ -59,13 +59,14 @@ def run():
 
     random_state = np.random.RandomState(RANDOM_SEED)
 
+    all_values_df = None
+
     all_results = []
 
     with tqdm_logging_redirect():
-        for noise_level in tqdm(noise_levels, desc="Noise Level", leave=False):
-            logger.info(f"{noise_level=}")
-
-            for _ in trange(n_repetitions, desc="Repetitions", leave=False):
+        for _ in trange(n_repetitions, desc="Repetitions", leave=True):
+            for noise_level in tqdm(noise_levels, desc="Noise Level", leave=False):
+                logger.info(f"{noise_level=}")
                 dataset, noisy_indices = create_synthetic_dataset(
                     n_features=n_features,
                     n_train_samples=n_train_samples,
@@ -154,9 +155,26 @@ def run():
                     }
                     all_results.append(results)
 
+                    # Save raw values
+                    column_name = f"{method_name}"
+                    df = (
+                        values.to_dataframe(column=column_name)
+                        .drop(columns=[f"{column_name}_stderr"])
+                        .T
+                    )
+                    df = df[sorted(df.columns)]
+                    df["method"] = method_name
+
+                    if all_values_df is None:
+                        all_values_df = df.copy()
+                    else:
+                        all_values_df = pd.concat([all_values_df, df])
+
     results_df = pd.DataFrame(all_results)
 
     results_df.to_csv(experiment_output_dir / "results.csv", index=False)
+
+    all_values_df.to_csv(experiment_output_dir / "values.csv", index=False)
 
     plot_clean_data_utility_percentage(
         results_df,

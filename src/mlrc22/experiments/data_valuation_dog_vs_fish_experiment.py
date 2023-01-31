@@ -2,6 +2,7 @@ import io
 import logging
 from contextlib import redirect_stderr
 
+import numpy as np
 import pandas as pd
 from pydvl.reporting.scores import compute_removal_score
 from pydvl.utils import Utility
@@ -51,6 +52,8 @@ def run():
 
     n_jobs = 8
     logger.info(f"Using number of jobs {n_jobs}")
+
+    all_values_df = None
 
     all_scores = []
 
@@ -120,6 +123,21 @@ def run():
                                 **kwargs,
                             )
 
+                    # Save raw values
+                    column_name = f"{method_name}_{budget}"
+                    df = (
+                        values.to_dataframe(column=column_name)
+                        .drop(columns=[f"{column_name}_stderr"])
+                        .T
+                    )
+                    df = df[sorted(df.columns)]
+                    df["method"] = method_name
+
+                    if all_values_df is None:
+                        all_values_df = df.copy()
+                    else:
+                        all_values_df = pd.concat([all_values_df, df])
+
                     # Remove worst data points
                     scores = compute_removal_score(
                         u=utility,
@@ -147,6 +165,8 @@ def run():
     scores_df = pd.DataFrame(all_scores)
 
     scores_df.to_csv(experiment_output_dir / "scores.csv", index=False)
+
+    all_values_df.to_csv(experiment_output_dir / "values.csv", index=False)
 
     plot_utility_over_removal_percentages(
         scores_df,

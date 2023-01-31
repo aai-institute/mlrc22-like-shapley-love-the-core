@@ -52,6 +52,8 @@ def run():
 
     model = GaussianNB()
 
+    all_values_df = None
+
     all_scores = []
 
     random_state = np.random.RandomState(RANDOM_SEED)
@@ -151,9 +153,26 @@ def run():
                         scores["flip_accuracy"] = flip_accuracy
                         all_scores.append(scores)
 
+                        # Save raw values
+                        column_name = f"{method_name}_{flip_percentage}"
+                        df = (
+                            values.to_dataframe(column=column_name)
+                            .drop(columns=[f"{column_name}_stderr"])
+                            .T
+                        )
+                        df = df[sorted(df.columns)]
+                        df["method"] = method_name
+
+                        if all_values_df is None:
+                            all_values_df = df.copy()
+                        else:
+                            all_values_df = pd.concat([all_values_df, df])
+
     scores_df = pd.DataFrame(all_scores)
 
     scores_df.to_csv(experiment_output_dir / "scores.csv", index=False)
+
+    all_values_df.to_csv(experiment_output_dir / "values.csv", index=False)
 
     plot_flipped_utility_over_removal_percentages(
         scores_df,
