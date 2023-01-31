@@ -17,7 +17,7 @@ from tqdm.contrib.logging import tqdm_logging_redirect
 from mlrc22.constants import OUTPUT_DIR, RANDOM_SEED
 from mlrc22.dataset import create_enron_spam_datasets
 from mlrc22.plotting import (
-    plot_flip_accuracy_over_removal_percentages,
+    plot_flipped_data_accuracy,
     plot_flipped_utility_over_removal_percentages,
 )
 from mlrc22.utils import set_random_seed, setup_logger, setup_plotting
@@ -161,7 +161,7 @@ def run():
         removal_percentages=removal_percentages,
         experiment_output_dir=experiment_output_dir,
     )
-    plot_flip_accuracy_over_removal_percentages(
+    plot_flipped_data_accuracy(
         scores_df,
         label_flip_percentages=label_flip_percentages,
         experiment_output_dir=experiment_output_dir,

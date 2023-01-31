@@ -16,6 +16,22 @@ __all__ = ["exact_nucleolus", "montecarlo_nucleolus"]
 logger = logging.getLogger(__name__)
 
 
+def _find_matching_indices(
+    x: NDArray[np.float_], y: NDArray[np.float_]
+) -> NDArray[np.int_]:
+    """Finds indices in x of rows that are both in x and y.
+    This assumes that all rows in y are contained in x and that both
+    are 2D arrays.
+    """
+    all_indices = []
+    for row in y:
+        indices = np.where(
+            np.apply_along_axis(lambda x: np.equal(x, row).all(), axis=1, arr=x)
+        )[0]
+        all_indices.append(indices)
+    return np.hstack(all_indices)
+
+
 def _solve_nucleolus(
     A_eq: NDArray[np.float_],
     b_eq: NDArray[np.float_],
@@ -23,21 +39,44 @@ def _solve_nucleolus(
     b_lb: NDArray[np.float_],
     *,
     epsilon: float = 0.0,
+    progress: bool = False,
     **options,
 ) -> tuple[NDArray[np.float_], NDArray[np.float_]]:
-    subsidies = np.zeroes_like(b_lb)
+    # Copy these here because we need the original ones to keep track of indices
+    reduced_A_eq = A_eq.copy()
+    reduced_b_eq = b_eq.copy()
+    reduced_A_lb = A_lb.copy()
+    reduced_b_lb = b_lb.copy()
 
-    while True:
+    subsidies = np.zeros_like(b_lb)
+
+    for i in maybe_progress(
+        range(len(A_lb)),
+        progress,
+        total=len(A_lb),
+    ):
+        logger.debug(f"iteration {i}")
         values, subsidy = _solve_least_core_linear_program(
-            A_eq=A_eq, b_eq=b_eq, A_lb=A_lb, b_lb=b_lb, epsilon=epsilon, **options
+            A_eq=reduced_A_eq,
+            b_eq=reduced_b_eq,
+            A_lb=reduced_A_lb,
+            b_lb=reduced_b_lb,
+            epsilon=epsilon,
+            **options,
         )
 
-        excess = b_lb - (A_lb @ values.values) - subsidy
+        if subsidy is None:
+            continue
+
+        excess = reduced_b_lb - (reduced_A_lb @ values) - subsidy
 
         # Find indices that satisfy the constraints
-        all_indices = np.arange(b_lb.shape[0])
-        satisfied_indices = np.where(excess <= 0)
-        not_satisfied_indices = np.setdiff1d(all_indices, satisfied_indices)
+        satisfied_indices = np.where(np.isclose(excess, 0.0))[0]
+        not_satisfied_indices = np.where(~np.isclose(excess, 0.0))[0]
+
+        # Update subsidies
+        matched_indices = _find_matching_indices(A_lb, reduced_A_lb[satisfied_indices])
+        subsidies[matched_indices] = subsidy
 
         if len(not_satisfied_indices) == 0:
             break
@@ -46,21 +85,21 @@ def _solve_nucleolus(
             raise RuntimeError("Could not solve Nucleolus")
 
         # Add satisfied lower bound constraints to the equality constraints
-        A_eq = np.concatenate([A_eq, A_lb[satisfied_indices]], axis=0)
-        b_eq = np.concatenate([b_eq, b_lb[satisfied_indices] - subsidy], axis=0)
+        reduced_A_eq = np.concatenate(
+            [reduced_A_eq, reduced_A_lb[satisfied_indices]], axis=0
+        )
+        reduced_b_eq = np.concatenate(
+            [reduced_b_eq, reduced_b_lb[satisfied_indices] - subsidy], axis=0
+        )
 
         # Keep only not satisfied lower bound constraints
-        A_lb = A_lb[not_satisfied_indices]
-        b_lb = b_lb[not_satisfied_indices]
-
-        # Update subsidies
-        subsidies[satisfied_indices] = subsidy
-
+        reduced_A_lb = reduced_A_lb[not_satisfied_indices]
+        reduced_b_lb = reduced_b_lb[not_satisfied_indices]
     return values, subsidies
 
 
 def exact_nucleolus(
-    u: Utility, *, options: Optional[dict] = None, progress: bool = True, **kwargs
+    u: Utility, *, options: Optional[dict] = None, progress: bool = False, **kwargs
 ) -> ValuationResult:
     """Code heavily inspired by pyDVL"""
     n = len(u.data)
@@ -97,7 +136,7 @@ def exact_nucleolus(
     b_eq = utility_values[-1:]
 
     values, subsidies = _solve_nucleolus(
-        A_eq=A_eq, b_eq=b_eq, A_lb=A_lb, b_lb=b_lb, **options
+        A_eq=A_eq, b_eq=b_eq, A_lb=A_lb, b_lb=b_lb, progress=progress, **options
     )
 
     return ValuationResult(

@@ -42,9 +42,9 @@ def run():
         "Random",
     ]
 
-    budget_list = [5000, 10000, 25000, 50000]
+    budget_list = [10000, 50000]
 
-    n_repetitions = 5
+    n_repetitions = 10
     logger.info(f"Using number of repetitions {n_repetitions}")
 
     n_jobs = 8

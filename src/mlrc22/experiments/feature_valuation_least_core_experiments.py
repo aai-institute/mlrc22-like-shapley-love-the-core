@@ -78,7 +78,14 @@ def run():
                     enable_cache=False,
                 )
                 logger.info("Computing exact Least Core values")
-                exact_values = exact_least_core(utility, progress=True)
+                exact_values = exact_least_core(
+                    utility,
+                    options={
+                        "solver": "SCS",
+                        "max_iters": 30000,
+                    },
+                    progress=True,
+                )
 
                 logger.info("Computing approximate Least Core values")
 
@@ -150,6 +157,15 @@ def run():
         scorer_names=scorer_names,
         method_name="least_core",
         experiment_output_dir=experiment_output_dir,
+        use_log_scale=False,
+    )
+
+    plot_constraint_accuracy_over_coalitions(
+        accuracies_df,
+        scorer_names=scorer_names,
+        method_name="least_core",
+        experiment_output_dir=experiment_output_dir,
+        use_log_scale=True,
     )
 
 

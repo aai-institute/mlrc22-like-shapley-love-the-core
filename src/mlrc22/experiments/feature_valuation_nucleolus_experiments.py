@@ -46,9 +46,7 @@ def run():
     random_state = np.random.RandomState(RANDOM_SEED)
 
     with tqdm_logging_redirect():
-        for dataset_name in tqdm(
-            ["House", "Medical", "Chemical"], desc="Dataset", leave=True
-        ):
+        for dataset_name in tqdm(["Medical", "Chemical"], desc="Dataset", leave=True):
             if dataset_name == "House":
                 dataset = create_house_voting_dataset(random_state=random_state)
             elif dataset_name == "Medical":
@@ -77,7 +75,15 @@ def run():
                     enable_cache=False,
                 )
                 logger.info("Computing exact Nucleolus values")
-                exact_values = exact_nucleolus(utility, progress=True)
+                exact_values = exact_nucleolus(
+                    utility,
+                    options={
+                        "solver": "ECOS",
+                        "max_iters": 30000,
+                    },
+                    progress=True,
+                )
+                breakpoint()
 
                 logger.info("Computing approximate Nucleolus values")
 
@@ -94,7 +100,7 @@ def run():
                             n_jobs=n_jobs,
                             config=parallel_config,
                             options={
-                                "solver": "SCS",
+                                "solver": "ECOS",
                                 "max_iters": 30000,
                             },
                         )
@@ -149,6 +155,15 @@ def run():
         scorer_names=scorer_names,
         method_name="nucleolus",
         experiment_output_dir=experiment_output_dir,
+        use_log_scale=False,
+    )
+
+    plot_constraint_accuracy_over_coalitions(
+        accuracies_df,
+        scorer_names=scorer_names,
+        method_name="nucleolus",
+        experiment_output_dir=experiment_output_dir,
+        use_log_scale=True,
     )
 
 

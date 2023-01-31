@@ -124,19 +124,15 @@ def create_synthetic_dataset(
 
     if noise_fraction > 0.0:
         n_noisy_samples = int(noise_fraction * n_train_samples)
-        indices = random_state.choice(
+        noisy_indices = random_state.choice(
             np.arange(n_train_samples),
             size=n_noisy_samples,
             replace=False,
         )
-        x_noisy = x_train[indices, :]
-        y_noisy = np.logical_not(y_train[indices])
-        x_noisy += noise_level * random_state.standard_normal(
-            size=x_train[indices].shape
+        scale = noise_level * np.std(x_train)
+        x_train[noisy_indices, :] += random_state.normal(
+            scale=scale, size=x_train[noisy_indices].shape
         )
-        x_train = np.concatenate([x_train, x_noisy], axis=0)
-        y_train = np.concatenate([y_train, y_noisy], axis=0)
-        noisy_indices = np.arange(n_train_samples, n_train_samples + n_noisy_samples)
     else:
         noisy_indices = np.array([], dtype=int)
 
