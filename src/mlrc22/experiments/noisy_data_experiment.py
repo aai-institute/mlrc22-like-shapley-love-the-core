@@ -31,6 +31,8 @@ set_random_seed(RANDOM_SEED)
 
 
 def run():
+    logger.info("Starting Noisy Data Experiment")
+
     experiment_output_dir = OUTPUT_DIR / "noisy_data"
     experiment_output_dir.mkdir(exist_ok=True)
 
@@ -171,6 +173,8 @@ def run():
     )
 
     plot_noisy_data_accuracy(results_df, experiment_output_dir=experiment_output_dir)
+
+    logger.info("Finished Noisy Data Experiment")
 
 
 if __name__ == "__main__":

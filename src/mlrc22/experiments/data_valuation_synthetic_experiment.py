@@ -29,6 +29,8 @@ set_random_seed(RANDOM_SEED)
 
 
 def run():
+    logger.info("Starting Data Valuation - Synthetic Experiment")
+
     experiment_output_dir = OUTPUT_DIR / "data_valuation_synthetic"
     experiment_output_dir.mkdir(exist_ok=True)
 
@@ -166,6 +168,8 @@ def run():
         removal_percentages=removal_percentages,
         experiment_output_dir=experiment_output_dir,
     )
+
+    logger.info("Finished Data Valuation - Synthetic Experiment")
 
 
 if __name__ == "__main__":

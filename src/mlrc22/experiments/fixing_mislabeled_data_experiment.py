@@ -29,6 +29,8 @@ set_random_seed(RANDOM_SEED)
 
 
 def run():
+    logger.info("Starting Fixing Mislabeled Data Experiment")
+
     experiment_output_dir = OUTPUT_DIR / "fixing_mislabeled_data"
     experiment_output_dir.mkdir(exist_ok=True)
 
@@ -166,6 +168,8 @@ def run():
         label_flip_percentages=label_flip_percentages,
         experiment_output_dir=experiment_output_dir,
     )
+
+    logger.info("Finished Fixing Mislabeled Data Experiment")
 
 
 if __name__ == "__main__":

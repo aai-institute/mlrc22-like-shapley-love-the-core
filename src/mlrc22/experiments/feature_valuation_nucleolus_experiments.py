@@ -27,6 +27,8 @@ set_random_seed(RANDOM_SEED)
 
 
 def run():
+    logger.info("Starting Feature Valuation - Nucleolus Experiment")
+
     experiment_output_dir = OUTPUT_DIR / "feature_valuation_nucleolus"
     experiment_output_dir.mkdir(exist_ok=True)
 
@@ -165,6 +167,8 @@ def run():
         experiment_output_dir=experiment_output_dir,
         use_log_scale=True,
     )
+
+    logger.info("Finished Feature Valuation - Nucleolus Experiment")
 
 
 if __name__ == "__main__":

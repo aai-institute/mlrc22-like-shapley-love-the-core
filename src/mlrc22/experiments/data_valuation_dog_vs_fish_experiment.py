@@ -28,6 +28,8 @@ set_random_seed(RANDOM_SEED)
 
 
 def run():
+    logger.info("Starting Data Valuation - Dog vs Fish Experiment")
+
     experiment_output_dir = OUTPUT_DIR / "data_valuation_dog_vs_fish"
     experiment_output_dir.mkdir(exist_ok=True)
 
@@ -153,6 +155,8 @@ def run():
         removal_percentages=removal_percentages,
         experiment_output_dir=experiment_output_dir,
     )
+
+    logger.info("Finished Data Valuation - Dog vs Fish Experiment")
 
 
 if __name__ == "__main__":
