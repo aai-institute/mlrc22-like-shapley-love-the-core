@@ -89,12 +89,12 @@ def plot_constraint_accuracy_over_coalitions(
             title=None,
             frameon=False,
         )
-        ax.set_ylim(0.0, 1.1)
         ax.set_xlabel("Fraction of Samples")
         ax.set_ylabel("Accuracy")
         if use_log_scale:
             scale = "log"
         else:
+            ax.set_ylim(0.0, 1.1)
             scale = "linear"
         ax.set_yscale(scale)
         fig.tight_layout()
