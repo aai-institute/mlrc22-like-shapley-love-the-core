@@ -1,7 +1,7 @@
 # ML-Reproducibility-Challenge-2022
 
 This repository contains code to reproduce the paper
-[`If You Like Shapley Then You’ll Love the Core`](https://ojs.aaai.org/index.php/AAAI/article/view/16721)
+[`If You Like Shapley Then You’ll Love the Core`](http://procaccia.info/wp-content/uploads/2020/12/core.pdf)
 for the [ML Reproducibility Challenge 2022](https://paperswithcode.com/rc2022).
 
 # Getting Started
@@ -35,19 +35,48 @@ dvc repro
 
 ## Feature Valuation
 
-This experiments uses 3 small scale datasets with a number of features between
-10 and 14. It uses monte carlo least core to compute feature valuations
-and then computes, for a varying number of computational budgets, the percentage
-of all feature coalitions that satisfy the least core constraints with respect
-to the true deficit $e^{*}$ (i.e. the exact least core value).
+### Least Core
 
 To reproduce the results of this experiment use:
 
 ```shell
-dvc repro feature-valuation
+dvc repro feature-valuation-least-core
 ```
 
-You can find the results under [output/feature_valuation](output/feature_valuation).
+You can find the results under [output/feature_valuation_least_core](output/feature_valuation_least_core).
+
+### Nucleolus
+
+To reproduce the results of this experiment use:
+
+```shell
+dvc repro feature-valuation-nucleolus
+```
+
+You can find the results under [output/feature_valuation_nucleolus](output/feature_valuation_nucleolus).
+
+
+## Data Valuation
+
+### Synthetic Data
+
+To reproduce the results of this experiment use:
+
+```shell
+dvc repro data-valuation-synthetic
+```
+
+You can find the results under [output/data_valuation_synthetic](output/data_valuation_synthetic).
+
+### Dog vs Fish Dataset
+
+To reproduce the results of this experiment use:
+
+```shell
+dvc repro data-valuation-dog-vs-fish
+```
+
+You can find the results under [output/data_valuation_dog_vs_fish](output/data_valuation_dog_vs_fish).
 
 ## Fixing Misalabeled Data
 

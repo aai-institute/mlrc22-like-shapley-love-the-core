@@ -12,24 +12,46 @@ stages:
       size: 91220
       nfiles: 4
   fixing-mislabeled-data:
-    cmd: python -m ml_reproducibility_challenge.experiments.fixing_mislabeled_data_experiment
+    cmd: python -m mlrc22.experiments.fixing_mislabeled_data_experiment
     deps:
-    - path: src/ml_reproducibility_challenge/experiments/fixing_mislabeled_data_experiment.py
-      md5: 593d90de0f777039483fb2303df6ea09
-      size: 8901
+    - path: src/mlrc22/experiments/fixing_mislabeled_data_experiment.py
+      md5: 574c226f79f67c939ceac0d8e822521e
+      size: 9636
     outs:
     - path: output/fixing_mislabeled_data/
-      md5: 63a80abb1a181d7e293f8c856f4c76e6.dir
-      size: 203123
-      nfiles: 13
+      md5: 31eb11c4a1234f893d60dc7d4917b16b.dir
+      size: 137507
+      nfiles: 9
   noisy-data:
-    cmd: python -m ml_reproducibility_challenge.experiments.noisy_data_experiment
+    cmd: python -m mlrc22.experiments.noisy_data_experiment
     deps:
-    - path: src/ml_reproducibility_challenge/experiments/noisy_data_experiment.py
-      md5: dd7f8647823557b06747029bfa7cff17
-      size: 7281
+    - path: src/mlrc22/experiments/noisy_data_experiment.py
+      md5: 35dcc31dca5a42a12aa3425107eef6cc
+      size: 7685
     outs:
     - path: output/noisy_data/
-      md5: e70bfc5e76925ebb2372c2bedc4fb019.dir
-      size: 41730
+      md5: e4d5079db3e6b3227d96aad49559e64a.dir
+      size: 41654
       nfiles: 4
+  data-valuation-synthetic:
+    cmd: python -m mlrc22.experiments.data_valuation_synthetic_experiment
+    deps:
+    - path: src/mlrc22/experiments/data_valuation_synthetic_experiment.py
+      md5: f3b7629cd9777effb8017e90e1f6e9fa
+      size: 7752
+    outs:
+    - path: output/data_valuation_synthetic/
+      md5: aabbaebef75d2cb717f1a58501a7baf0.dir
+      size: 98458
+      nfiles: 5
+  data-valuation-dog-vs-fish:
+    cmd: python -m mlrc22.experiments.data_valuation_dog_vs_fish_experiment
+    deps:
+    - path: src/mlrc22/experiments/data_valuation_dog_vs_fish_experiment.py
+      md5: cea0c4024c031b66d1fad4ec74f19795
+      size: 7438
+    outs:
+    - path: output/data_valuation_dog_vs_fish/
+      md5: 26b80ac54b157bc7df6c1f6a30a20b57.dir
+      size: 81029
+      nfiles: 5

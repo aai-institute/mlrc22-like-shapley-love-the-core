@@ -2,9 +2,9 @@
 name = "ml-reproducibility-challenge-2022"
 version = "0.1.0"
 description = "Code for reproducing the experiments of 'If You Like Shapley Then You’ll Love the Core'"
-authors = ["appliedAI gGmbH"]
+authors = ["Anonymous"]
 readme = "README.md"
-packages = [{include = "ml_reproducibility_challenge", from = "src"}]
+packages = [{include = "mlrc22", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.10"
