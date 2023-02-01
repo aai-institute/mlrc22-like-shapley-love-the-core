@@ -129,6 +129,24 @@ def run():
                         lowest_value_indices, noisy_indices
                     ).mean()
 
+                    # Save raw values
+                    column_name = f"{method_name}"
+                    df = (
+                        values.to_dataframe(column=column_name)
+                        .drop(columns=[f"{column_name}_stderr"])
+                        .T
+                    )
+                    df = df[sorted(df.columns)]
+                    df["method"] = method_name
+
+                    if all_values_df is None:
+                        all_values_df = df.copy()
+                    else:
+                        all_values_df = pd.concat([all_values_df, df])
+
+                    # Get the actual values
+                    values = values.values
+
                     mask = np.ones(len(values), dtype=bool)
                     mask[noisy_indices] = False
 
@@ -154,22 +172,6 @@ def run():
                         "method": method_name,
                     }
                     all_results.append(results)
-
-                    # Save raw values
-                    column_name = f"{method_name}"
-                    df = (
-                        values.to_dataframe(column=column_name)
-                        .drop(columns=[f"{column_name}_stderr"])
-                        .T
-                    )
-                    df = df[sorted(df.columns)]
-                    df["method"] = method_name
-
-                    if all_values_df is None:
-                        all_values_df = df.copy()
-                    else:
-                        all_values_df = pd.concat([all_values_df, df])
-
     results_df = pd.DataFrame(all_results)
 
     results_df.to_csv(experiment_output_dir / "results.csv", index=False)
@@ -178,6 +180,7 @@ def run():
 
     plot_clean_data_utility_percentage(
         results_df,
+        method_names=method_names,
         noise_fraction=noise_fraction,
         noise_levels=noise_levels,
         experiment_output_dir=experiment_output_dir,
@@ -185,6 +188,7 @@ def run():
 
     plot_clean_data_vs_noisy_data_utility(
         results_df,
+        method_names=method_names,
         noise_fraction=noise_fraction,
         noise_levels=noise_levels,
         experiment_output_dir=experiment_output_dir,

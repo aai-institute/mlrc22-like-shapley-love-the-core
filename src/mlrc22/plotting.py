@@ -108,28 +108,34 @@ def plot_constraint_accuracy_over_coalitions(
 def plot_clean_data_utility_percentage(
     results_df: pd.DataFrame,
     *,
+    method_names: list[str],
     noise_fraction: float,
     noise_levels: list[float],
     experiment_output_dir: Path,
 ) -> None:
+    mean_colors = ["limegreen", "indianred", "dodgerblue"]
+    shade_colors = ["seagreen", "firebrick", "lightskyblue"]
+
     fig, ax = plt.subplots()
 
-    df = results_df
-    df = (
-        df.groupby("noise_level")["clean_values_percentage"]
-        .apply(lambda df: df.reset_index(drop=True))
-        .unstack()
-    )
-    shaded_mean_normal_confidence_interval(
-        df,
-        abscissa=noise_levels,
-        mean_color="limegreen",
-        shade_color="seagreen",
-        xlabel="Noise Level",
-        ylabel="Percentage of the Total Utility",
-        label=f"Noise Fraction: {noise_fraction:.1f}",
-        ax=ax,
-    )
+    for i, method_name in enumerate(method_names):
+        df = results_df[(results_df["method"] == method_name)].drop(columns=["method"])
+
+        df = (
+            df.groupby("noise_level")["clean_values_percentage"]
+            .apply(lambda df: df.reset_index(drop=True))
+            .unstack()
+        )
+        shaded_mean_normal_confidence_interval(
+            df,
+            abscissa=noise_levels,
+            mean_color=mean_colors[i],
+            shade_color=shade_colors[i],
+            xlabel="Noise Level",
+            ylabel="Percentage of the Total Utility",
+            label=f"Noise Fraction: {noise_fraction:.1f}",
+            ax=ax,
+        )
 
     plt.legend(
         bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left", mode="expand", ncol=2
@@ -144,6 +150,7 @@ def plot_clean_data_utility_percentage(
 def plot_clean_data_vs_noisy_data_utility(
     results_df: pd.DataFrame,
     *,
+    method_names: list[str],
     noise_fraction: float,
     noise_levels: list[float],
     experiment_output_dir: Path,
@@ -151,40 +158,42 @@ def plot_clean_data_vs_noisy_data_utility(
     mean_colors = ["limegreen", "indianred", "dodgerblue"]
     shade_colors = ["seagreen", "firebrick", "lightskyblue"]
 
-    df = results_df
-    df = (
-        df.groupby("noise_level")[
-            ["total_clean_utility", "total_noisy_utility", "total_utility"]
-        ]
-        .apply(lambda df: df.reset_index(drop=True))
-        .unstack()
-    )
-    fig, ax = plt.subplots()
-    for i, (column, ylabel) in enumerate(
-        zip(
-            ["total_clean_utility", "total_noisy_utility", "total_utility"],
-            ["Clean Data", "Noisy Data", "Total Utility"],
+    for i, method_name in enumerate(method_names):
+        df = results_df[(results_df["method"] == method_name)].drop(columns=["method"])
+
+        df = (
+            df.groupby("noise_level")[
+                ["total_clean_utility", "total_noisy_utility", "total_utility"]
+            ]
+            .apply(lambda df: df.reset_index(drop=True))
+            .unstack()
         )
-    ):
-        shaded_mean_normal_confidence_interval(
-            df[[column]],
-            abscissa=noise_levels,
-            mean_color=mean_colors[i],
-            shade_color=shade_colors[i],
-            xlabel="Noise Level",
-            ylabel="Utility",
-            label=ylabel,
-            ax=ax,
+        fig, ax = plt.subplots()
+        for i, (column, ylabel) in enumerate(
+            zip(
+                ["total_clean_utility", "total_noisy_utility", "total_utility"],
+                ["Clean Data", "Noisy Data", "Total Utility"],
+            )
+        ):
+            shaded_mean_normal_confidence_interval(
+                df[[column]],
+                abscissa=noise_levels,
+                mean_color=mean_colors[i],
+                shade_color=shade_colors[i],
+                xlabel="Noise Level",
+                ylabel="Utility",
+                label=ylabel,
+                ax=ax,
+            )
+        plt.legend(
+            bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left", mode="expand", ncol=3
         )
-    plt.legend(
-        bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left", mode="expand", ncol=3
-    )
-    fig.tight_layout()
-    fig.savefig(
-        experiment_output_dir
-        / f"clean_data_vs_noisy_data_utility_{noise_fraction:.2f}.pdf",
-        bbox_inches="tight",
-    )
+        fig.tight_layout()
+        fig.savefig(
+            experiment_output_dir
+            / f"clean_data_vs_noisy_data_utility_{method_name.lower().replace(' ', '_')}_{noise_fraction:.2f}.pdf",
+            bbox_inches="tight",
+        )
 
 
 def plot_noisy_data_accuracy(
