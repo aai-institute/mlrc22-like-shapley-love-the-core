@@ -55,3 +55,14 @@ stages:
       md5: 26b80ac54b157bc7df6c1f6a30a20b57.dir
       size: 81029
       nfiles: 5
+  feature-valuation-least-core:
+    cmd: python -m mlrc22.experiments.feature_valuation_least_core_experiments
+    deps:
+    - path: src/mlrc22/experiments/feature_valuation_least_core_experiments.py
+      md5: 5c6f7d7b985b81dbb422df5adcc00db7
+      size: 7567
+    outs:
+    - path: output/feature_valuation_least_core/
+      md5: 468ebf897b4629a3a9ef25b98176a1fd.dir
+      size: 297468
+      nfiles: 8
