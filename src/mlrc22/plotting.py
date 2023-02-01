@@ -68,6 +68,15 @@ def plot_constraint_accuracy_over_coalitions(
 ) -> None:
     for scorer in scorer_names:
         df = accuracies_df[accuracies_df["scorer"] == scorer]
+
+        for scorer in scorer_names:
+            if scorer == "accuracy":
+                ylabel = "Accuracy"
+            elif scorer == "f1":
+                ylabel = "F1 Score"
+            else:
+                ylabel = "Average Precision"
+
         fig, ax = plt.subplots()
         sns.barplot(
             data=df,
@@ -90,7 +99,7 @@ def plot_constraint_accuracy_over_coalitions(
             frameon=False,
         )
         ax.set_xlabel("Fraction of Samples")
-        ax.set_ylabel("Accuracy")
+        ax.set_ylabel(ylabel)
         if use_log_scale:
             scale = "log"
         else:
