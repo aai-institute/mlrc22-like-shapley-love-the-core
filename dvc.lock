@@ -15,24 +15,24 @@ stages:
     cmd: python -m mlrc22.experiments.fixing_mislabeled_data_experiment
     deps:
     - path: src/mlrc22/experiments/fixing_mislabeled_data_experiment.py
-      md5: 574c226f79f67c939ceac0d8e822521e
-      size: 9636
+      md5: 76c82a4242e9beac9d0697c843b9aa5d
+      size: 7819
     outs:
     - path: output/fixing_mislabeled_data/
-      md5: 31eb11c4a1234f893d60dc7d4917b16b.dir
-      size: 137507
-      nfiles: 9
+      md5: 6052d8c6e1e3e80cbae6d0aecad83cf3.dir
+      size: 1067221
+      nfiles: 10
   noisy-data:
     cmd: python -m mlrc22.experiments.noisy_data_experiment
     deps:
     - path: src/mlrc22/experiments/noisy_data_experiment.py
-      md5: 35dcc31dca5a42a12aa3425107eef6cc
-      size: 7685
+      md5: db711622684a50797b221036ffd9822d
+      size: 7834
     outs:
     - path: output/noisy_data/
-      md5: e4d5079db3e6b3227d96aad49559e64a.dir
-      size: 41654
-      nfiles: 4
+      md5: c6fc53b51bf42c4dbd308e44f351cc9e.dir
+      size: 387340
+      nfiles: 7
   data-valuation-synthetic:
     cmd: python -m mlrc22.experiments.data_valuation_synthetic_experiment
     deps:
