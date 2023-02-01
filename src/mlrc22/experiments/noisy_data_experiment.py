@@ -178,10 +178,11 @@ def run():
 
     all_values_df.to_csv(experiment_output_dir / "values.csv", index=False)
 
+    results_df = pd.read_csv(experiment_output_dir / "results.csv")
+
     plot_clean_data_utility_percentage(
         results_df,
         method_names=method_names,
-        noise_fraction=noise_fraction,
         noise_levels=noise_levels,
         experiment_output_dir=experiment_output_dir,
     )

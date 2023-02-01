@@ -109,7 +109,6 @@ def plot_clean_data_utility_percentage(
     results_df: pd.DataFrame,
     *,
     method_names: list[str],
-    noise_fraction: float,
     noise_levels: list[float],
     experiment_output_dir: Path,
 ) -> None:
@@ -133,12 +132,12 @@ def plot_clean_data_utility_percentage(
             shade_color=shade_colors[i],
             xlabel="Noise Level",
             ylabel="Percentage of the Total Utility",
-            label=f"Noise Fraction: {noise_fraction:.1f}",
+            label=method_name,
             ax=ax,
         )
 
     plt.legend(
-        bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left", mode="expand", ncol=2
+        bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower left", mode="expand", ncol=3
     )
     fig.tight_layout()
     fig.savefig(
@@ -204,21 +203,13 @@ def plot_noisy_data_accuracy(
     fig, ax = plt.subplots()
     sns.boxplot(
         data=scores_df,
-        hue="method",
+        x="method",
         y="noisy_accuracy",
         ax=ax,
     )
-    sns.move_legend(
-        ax,
-        "lower center",
-        bbox_to_anchor=(0.5, 1),
-        ncol=3,
-        title=None,
-        frameon=False,
-    )
     ax.set_ylim(0.0, 1.1)
     ax.set_xlabel("Method")
-    ax.set_ylabel("Flipped Data Points Accuracy")
+    ax.set_ylabel("Noisy Data Points Accuracy")
     fig.tight_layout()
     fig.savefig(
         experiment_output_dir / f"noisy_data_accuracy.pdf",
