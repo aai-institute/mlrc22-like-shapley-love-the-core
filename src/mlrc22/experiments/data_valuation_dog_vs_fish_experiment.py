@@ -52,7 +52,7 @@ def run():
 
     experiment_output_dir.mkdir(exist_ok=True)
 
-    n_repetitions = 10
+    n_repetitions = 5
     logger.info(f"Using number of repetitions {n_repetitions}")
 
     n_jobs = 8

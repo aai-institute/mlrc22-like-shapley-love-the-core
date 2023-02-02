@@ -5,12 +5,6 @@ stages:
     - src/mlrc22/experiments/feature_valuation_least_core_experiments.py
     outs:
     - output/feature_valuation_least_core/
-  # feature-valuation-nucleolus:
-  #   cmd: python -m mlrc22.experiments.feature_valuation_nucleolus_experiments
-  #   deps:
-  #   - src/mlrc22/experiments/feature_valuation_nucleolus_experiments.py
-  #   outs:
-  #   - output/feature_valuation_nucleolus/
   fixing-mislabeled-data:
     cmd: python -m mlrc22.experiments.fixing_mislabeled_data_experiment
     deps:

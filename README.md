@@ -45,16 +45,6 @@ dvc repro feature-valuation-least-core
 
 You can find the results under [output/feature_valuation_least_core](output/feature_valuation_least_core).
 
-### Nucleolus
-
-To reproduce the results of this experiment use:
-
-```shell
-dvc repro feature-valuation-nucleolus
-```
-
-You can find the results under [output/feature_valuation_nucleolus](output/feature_valuation_nucleolus).
-
 
 ## Data Valuation
 
