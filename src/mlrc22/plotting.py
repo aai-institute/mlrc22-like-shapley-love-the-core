@@ -69,13 +69,12 @@ def plot_constraint_accuracy_over_coalitions(
     for scorer in scorer_names:
         df = accuracies_df[accuracies_df["scorer"] == scorer]
 
-        for scorer in scorer_names:
-            if scorer == "accuracy":
-                ylabel = "Accuracy"
-            elif scorer == "f1":
-                ylabel = "F1 Score"
-            else:
-                ylabel = "Average Precision"
+        if scorer == "accuracy":
+            ylabel = "Accuracy"
+        elif scorer == "f1":
+            ylabel = "F1 Score"
+        else:
+            ylabel = "Average Precision"
 
         fig, ax = plt.subplots()
         sns.barplot(
@@ -177,10 +176,10 @@ def plot_clean_data_vs_noisy_data_utility(
             .unstack()
         )
         fig, ax = plt.subplots()
-        for i, (column, ylabel) in enumerate(
+        for i, (column, label) in enumerate(
             zip(
                 ["total_clean_utility", "total_noisy_utility", "total_utility"],
-                ["Clean Data", "Noisy Data", "Total Utility"],
+                ["Clean Data", "Noisy Data", "Total Value"],
             )
         ):
             shaded_mean_normal_confidence_interval(
@@ -189,8 +188,8 @@ def plot_clean_data_vs_noisy_data_utility(
                 mean_color=mean_colors[i],
                 shade_color=shade_colors[i],
                 xlabel="Noise Level",
-                ylabel="Utility",
-                label=ylabel,
+                ylabel="Value",
+                label=label,
                 ax=ax,
             )
         plt.legend(
@@ -209,11 +208,20 @@ def plot_noisy_data_accuracy(
     *,
     experiment_output_dir: Path,
 ) -> None:
+
     fig, ax = plt.subplots()
     sns.boxplot(
         data=scores_df,
         x="method",
         y="noisy_accuracy",
+        hue="noise_level",
+        palette={
+            0.0: "dodgerblue",
+            0.5: "darkorange",
+            1.0: "limegreen",
+            2.0: "indianred",
+            3.0: "darkorchid",
+        },
         ax=ax,
     )
     ax.set_ylim(0.0, 1.1)
@@ -293,6 +301,7 @@ def plot_flipped_utility_over_removal_percentages(
                     & (scores_df["scorer"] == scorer)
                     & (scores_df["flip_percentage"] == flip_percentage)
                 ].drop(columns=["method", "scorer", "flip_percentage", "flip_accuracy"])
+
                 shaded_mean_normal_confidence_interval(
                     df,
                     abscissa=removal_percentages,

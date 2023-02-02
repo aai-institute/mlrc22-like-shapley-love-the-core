@@ -50,7 +50,7 @@ def run():
     n_repetitions = 10
     logger.info(f"Using number of repetitions {n_repetitions}")
 
-    n_jobs = 8
+    n_jobs = 20
     logger.info(f"Using number of jobs {n_jobs}")
 
     all_values_df = None
