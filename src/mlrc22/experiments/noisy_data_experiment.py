@@ -1,10 +1,12 @@
 import io
 import logging
 from contextlib import redirect_stderr
+from time import time
 
 import numpy as np
 import pandas as pd
-from pydvl.utils import Utility
+import pydvl.value.least_core
+from pydvl.utils import Utility, init_parallel_backend
 from pydvl.utils.config import ParallelConfig
 from pydvl.value.least_core import montecarlo_least_core
 from pydvl.value.results import ValuationResult
@@ -37,25 +39,27 @@ def run():
     experiment_output_dir = OUTPUT_DIR / "noisy_data"
     experiment_output_dir.mkdir(exist_ok=True)
 
-    parallel_config = ParallelConfig(backend="ray", logging_level=logging.ERROR)
+    parallel_config = ParallelConfig(
+        backend="ray", logging_level=logging.ERROR, n_local_workers=1
+    )
 
     n_features = 50
     n_train_samples = 200
     n_test_samples = 5000
 
-    noise_levels = [0.0, 0.5, 1.0, 2.0, 3.0]
+    noise_levels = [0.0]  # , 0.5, 1.0, 2.0, 3.0]
     noise_fraction = 0.2
     logger.info(f"{noise_fraction=}")
 
-    method_names = ["Random", "Least Core", "TMC Shapley"]
+    method_names = ["Least Core", "TMC Shapley", "Random"]
 
-    n_iterations = 5000
+    n_iterations = 300
     logger.info(f"Using number of iterations {n_iterations}")
 
-    n_repetitions = 5
+    n_repetitions = 1  # 0
     logger.info(f"Using number of repetitions {n_repetitions}")
 
-    n_jobs = 8
+    n_jobs = 1
     logger.info(f"Using number of jobs {n_jobs}")
 
     random_state = np.random.RandomState(RANDOM_SEED)
@@ -63,6 +67,8 @@ def run():
     all_values_df = None
 
     all_results = []
+    promised_values = []
+    parallel_backend = init_parallel_backend(parallel_config)
 
     with tqdm_logging_redirect():
         for _ in trange(n_repetitions, desc="Repetitions", leave=True):
@@ -93,10 +99,15 @@ def run():
                     logger.info(f"{method_name=}")
                     if method_name == "Random":
                         values = ValuationResult.from_random(size=len(utility.data))
+                        fun = lambda: dict(
+                            values=values,
+                            method=method_name,
+                            noise_level=noise_level,
+                            noise_fraction=noise_fraction,
+                        )
                     elif method_name == "Least Core":
-                        values = montecarlo_least_core(
+                        problem = montecarlo_least_core(
                             utility,
-                            epsilon=0.0,
                             n_iterations=n_iterations,
                             n_jobs=n_jobs,
                             config=parallel_config,
@@ -104,6 +115,14 @@ def run():
                                 "solver": "SCS",
                                 "max_iters": 30000,
                             },
+                        )
+                        fun = lambda: dict(
+                            values=pydvl.value.least_core.montecarlo._solve_linear_problem(
+                                utility, problem
+                            ),
+                            method=method_name,
+                            noise_level=noise_level,
+                            noise_fraction=noise_fraction,
                         )
                     else:
                         f = io.StringIO()
@@ -118,63 +137,83 @@ def run():
                                 config=parallel_config,
                                 mode=ShapleyMode.TruncatedMontecarlo,
                             )
+                            fun = lambda: dict(
+                                values=values,
+                                method=method_name,
+                                noise_level=noise_level,
+                                noise_fraction=noise_fraction,
+                            )
 
-                    # Sort values in increasing order
-                    values.sort()
-                    # The noisy data points should have the lowest valuation
-                    # So to verify that we compute the percentage of data points
-                    # with the lowest valuation that correspond to the noisy data points
-                    lowest_value_indices = values.indices[: len(noisy_indices)]
-                    assert lowest_value_indices.shape == noisy_indices.shape
-                    noisy_indices_accuracy = np.in1d(
-                        lowest_value_indices, noisy_indices
-                    ).mean()
+                    promised_values.append(parallel_backend.wrap(fun).remote())
 
-                    # Save raw values
-                    column_name = f"{method_name}"
-                    df = (
-                        values.to_dataframe(column=column_name)
-                        .drop(columns=[f"{column_name}_stderr"])
-                        .T
-                    )
-                    df = df[sorted(df.columns)]
-                    df["method"] = method_name
-                    df["noise_level"] = noise_level
-                    df["noise_fraction"] = noise_fraction
+        logger.info(f"Waiting for {len(promised_values)} promised values")
+        start = time()
+        resolved_values = parallel_backend.get(promised_values)
+        logger.info(
+            f"Resolved {len(resolved_values)} promised values in {time() - start:.2f} seconds"
+        )
 
-                    if all_values_df is None:
-                        all_values_df = df.copy()
-                    else:
-                        all_values_df = pd.concat([all_values_df, df])
+        for result in tqdm(resolved_values, desc="Waiting for values", leave=True):
+            values = result["values"]
+            method_name = result["method"]
+            noise_level = result["noise_level"]
+            noise_fraction = result["noise_fraction"]
 
-                    # Get the actual values
-                    values = values.values
+            # Sort values in increasing order
+            values.sort()
+            # The noisy data points should have the lowest valuation
+            # So to verify that we compute the percentage of data points
+            # with the lowest valuation that correspond to the noisy data points
+            lowest_value_indices = values.indices[: len(noisy_indices)]
+            assert lowest_value_indices.shape == noisy_indices.shape
+            noisy_indices_accuracy = np.in1d(lowest_value_indices, noisy_indices).mean()
 
-                    mask = np.ones(len(values), dtype=bool)
-                    mask[noisy_indices] = False
+            # Save raw values
+            column_name = f"{method_name}"
+            df = (
+                values.to_dataframe(column=column_name)
+                .drop(columns=[f"{column_name}_stderr"])
+                .T
+            )
+            df = df[sorted(df.columns)]
+            df["method"] = method_name
+            df["noise_level"] = noise_level
+            df["noise_fraction"] = noise_fraction
 
-                    shifted_values = values - np.min(values)
-                    total_shifted_utility = np.sum(shifted_values)
-                    total_shifted_clean_values = np.sum(shifted_values[mask])
-                    shifted_clean_values_percentage = (
-                        total_shifted_clean_values / total_shifted_utility
-                    )
+            if all_values_df is None:
+                all_values_df = df.copy()
+            else:
+                all_values_df = pd.concat([all_values_df, df])
 
-                    total_utility = np.sum(values)
-                    total_clean_utility = np.sum(values[mask])
-                    total_noisy_utility = total_utility - total_clean_utility
+            # Get the actual values
+            values = values.values
 
-                    results = {
-                        "noise_level": noise_level,
-                        "noise_fraction": noise_fraction,
-                        "clean_values_percentage": shifted_clean_values_percentage,
-                        "total_clean_utility": total_clean_utility,
-                        "total_noisy_utility": total_noisy_utility,
-                        "total_utility": total_utility,
-                        "noisy_accuracy": noisy_indices_accuracy,
-                        "method": method_name,
-                    }
-                    all_results.append(results)
+            mask = np.ones(len(values), dtype=bool)
+            mask[noisy_indices] = False
+
+            shifted_values = values - np.min(values)
+            total_shifted_utility = np.sum(shifted_values)
+            total_shifted_clean_values = np.sum(shifted_values[mask])
+            shifted_clean_values_percentage = (
+                total_shifted_clean_values / total_shifted_utility
+            )
+
+            total_utility = np.sum(values)
+            total_clean_utility = np.sum(values[mask])
+            total_noisy_utility = total_utility - total_clean_utility
+
+            results = {
+                "noise_level": noise_level,
+                "noise_fraction": noise_fraction,
+                "clean_values_percentage": shifted_clean_values_percentage,
+                "total_clean_utility": total_clean_utility,
+                "total_noisy_utility": total_noisy_utility,
+                "total_utility": total_utility,
+                "noisy_accuracy": noisy_indices_accuracy,
+                "method": method_name,
+            }
+            all_results.append(results)
+
     results_df = pd.DataFrame(all_results)
 
     results_df.to_csv(experiment_output_dir / "results.csv", index=False)
