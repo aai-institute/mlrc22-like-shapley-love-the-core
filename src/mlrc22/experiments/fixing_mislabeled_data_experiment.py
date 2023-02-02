@@ -163,7 +163,7 @@ def run():
                         )
                         df = df[sorted(df.columns)]
                         df["method"] = method_name
-                        df["scorer"] = scorer
+                        df["scorer"] = scorer_name
                         df["flip_percentage"] = flip_percentage
 
                         if all_values_df is None:
