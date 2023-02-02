@@ -47,16 +47,16 @@ def run():
     n_train_samples = 200
     n_test_samples = 5000
 
-    noise_levels = [0.0]  # , 0.5, 1.0, 2.0, 3.0]
+    noise_levels = [0.0, 0.5, 1.0, 2.0, 3.0]
     noise_fraction = 0.2
     logger.info(f"{noise_fraction=}")
 
     method_names = ["Least Core", "TMC Shapley", "Random"]
 
-    n_iterations = 300
+    n_iterations = 10000
     logger.info(f"Using number of iterations {n_iterations}")
 
-    n_repetitions = 1  # 0
+    n_repetitions = 10
     logger.info(f"Using number of repetitions {n_repetitions}")
 
     n_jobs = 1
@@ -67,8 +67,22 @@ def run():
     all_values_df = None
 
     all_results = []
-    promised_values = []
+    delayed_values = []
     parallel_backend = init_parallel_backend(parallel_config)
+
+    def _fun(u, data, method, level, fraction):
+        if method in ("Random", "TMC Shapley"):
+            values = data
+        else:
+            values = pydvl.value.least_core.montecarlo._solve_linear_problem(u, data)
+        return dict(
+            values=values,
+            method=method,
+            noise_level=level,
+            noise_fraction=fraction,
+        )
+
+    fun = parallel_backend.wrap(_fun)
 
     with tqdm_logging_redirect():
         for _ in trange(n_repetitions, desc="Repetitions", leave=True):
@@ -99,14 +113,8 @@ def run():
                     logger.info(f"{method_name=}")
                     if method_name == "Random":
                         values = ValuationResult.from_random(size=len(utility.data))
-                        fun = lambda: dict(
-                            values=values,
-                            method=method_name,
-                            noise_level=noise_level,
-                            noise_fraction=noise_fraction,
-                        )
                     elif method_name == "Least Core":
-                        problem = montecarlo_least_core(
+                        values = montecarlo_least_core(
                             utility,
                             n_iterations=n_iterations,
                             n_jobs=n_jobs,
@@ -115,14 +123,6 @@ def run():
                                 "solver": "SCS",
                                 "max_iters": 30000,
                             },
-                        )
-                        fun = lambda: dict(
-                            values=pydvl.value.least_core.montecarlo._solve_linear_problem(
-                                utility, problem
-                            ),
-                            method=method_name,
-                            noise_level=noise_level,
-                            noise_fraction=noise_fraction,
                         )
                     else:
                         f = io.StringIO()
@@ -137,23 +137,27 @@ def run():
                                 config=parallel_config,
                                 mode=ShapleyMode.TruncatedMontecarlo,
                             )
-                            fun = lambda: dict(
-                                values=values,
-                                method=method_name,
-                                noise_level=noise_level,
-                                noise_fraction=noise_fraction,
-                            )
 
-                    promised_values.append(parallel_backend.wrap(fun).remote())
+                    delayed_values.append(
+                        dict(
+                            u=utility,
+                            data=values,
+                            method=method_name,
+                            level=noise_level,
+                            fraction=noise_fraction,
+                        )
+                    )
 
-        logger.info(f"Waiting for {len(promised_values)} promised values")
+        logger.info(f"Waiting for {len(delayed_values)} promised values")
         start = time()
-        resolved_values = parallel_backend.get(promised_values)
+        resolved_values = parallel_backend.get(
+            [fun.remote(**p) for p in delayed_values]
+        )
         logger.info(
             f"Resolved {len(resolved_values)} promised values in {time() - start:.2f} seconds"
         )
 
-        for result in tqdm(resolved_values, desc="Waiting for values", leave=True):
+        for result in resolved_values:
             values = result["values"]
             method_name = result["method"]
             noise_level = result["noise_level"]
