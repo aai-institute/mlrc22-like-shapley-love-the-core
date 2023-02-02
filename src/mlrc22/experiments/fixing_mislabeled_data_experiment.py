@@ -19,6 +19,7 @@ from mlrc22.dataset import create_enron_spam_datasets
 from mlrc22.plotting import (
     plot_flipped_data_accuracy,
     plot_flipped_utility_over_removal_percentages,
+    plot_values_histogram,
 )
 from mlrc22.utils import set_random_seed, setup_logger, setup_plotting
 
@@ -162,6 +163,8 @@ def run():
                         )
                         df = df[sorted(df.columns)]
                         df["method"] = method_name
+                        df["scorer"] = scorer
+                        df["flip_percentage"] = flip_percentage
 
                         if all_values_df is None:
                             all_values_df = df.copy()
@@ -185,6 +188,13 @@ def run():
     plot_flipped_data_accuracy(
         scores_df,
         label_flip_percentages=label_flip_percentages,
+        experiment_output_dir=experiment_output_dir,
+    )
+
+    plot_values_histogram(
+        all_values_df,
+        hue_column="flip_percentage",
+        method_names=method_names,
         experiment_output_dir=experiment_output_dir,
     )
 

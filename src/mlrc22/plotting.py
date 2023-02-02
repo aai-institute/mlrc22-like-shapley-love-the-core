@@ -15,6 +15,7 @@ __all__ = [
     "plot_clean_data_vs_noisy_data_utility",
     "plot_utility_over_removal_percentages",
     "plot_noisy_data_accuracy",
+    "plot_values_histogram",
 ]
 
 
@@ -139,7 +140,7 @@ def plot_clean_data_utility_percentage(
             mean_color=mean_colors[i],
             shade_color=shade_colors[i],
             xlabel="Noise Level",
-            ylabel="Percentage of the Total Utility",
+            ylabel="Percentage of the Total Shifted Value",
             label=method_name,
             ax=ax,
         )
@@ -215,6 +216,7 @@ def plot_noisy_data_accuracy(
         x="method",
         y="noisy_accuracy",
         hue="noise_level",
+        saturation=1.0,
         palette={
             0.0: "dodgerblue",
             0.5: "darkorange",
@@ -224,14 +226,77 @@ def plot_noisy_data_accuracy(
         },
         ax=ax,
     )
+    for patch in ax.patches:
+        r, g, b, _ = patch.get_facecolor()
+        patch.set_facecolor((r, g, b, 0.5))
+
+    # Also fix the legend
+    for legpatch in ax.get_legend().get_patches():
+        r, g, b, _ = legpatch.get_facecolor()
+        legpatch.set_edgecolor("white")
+        legpatch.set_facecolor((r, g, b, 0.5))
+
     ax.set_ylim(0.0, 1.1)
     ax.set_xlabel("Method")
     ax.set_ylabel("Noisy Data Points Accuracy")
+    sns.move_legend(
+        ax,
+        "lower center",
+        bbox_to_anchor=(0.5, 1),
+        ncol=5,
+        title="Noise Level",
+        frameon=False,
+    )
     fig.tight_layout()
     fig.savefig(
         experiment_output_dir / f"noisy_data_accuracy.pdf",
         bbox_inches="tight",
     )
+
+
+def plot_values_histogram(
+    values_df: pd.DataFrame,
+    method_names: list[str],
+    hue_column: str,
+    *,
+    experiment_output_dir: Path,
+) -> None:
+    colors = ["dodgerblue", "darkorange", "limegreen", "indianred", "darkorchid"]
+    palette = {
+        value: color for value, color in zip(values_df[hue_column].unique(), colors)
+    }
+
+    values_df = values_df.groupby(["method", hue_column]).mean(numeric_only=True)
+
+    for method_name in method_names:
+        fig, ax = plt.subplots()
+        df = values_df.loc[method_name].reset_index()
+        df = pd.melt(df, id_vars=[hue_column])
+
+        sns.histplot(
+            data=df,
+            x="value",
+            hue=hue_column,
+            multiple="layer",
+            kde=True,
+            palette=palette,
+            ax=ax,
+        )
+        sns.move_legend(
+            ax,
+            "lower center",
+            bbox_to_anchor=(0.5, 1),
+            ncol=5,
+            title=hue_column.replace("_", " ").capitalize(),
+            frameon=False,
+        )
+        ax.set_xlabel("Value")
+        fig.tight_layout()
+        fig.savefig(
+            experiment_output_dir
+            / f"values_histogram_{method_name.lower().replace(' ', '_')}.pdf",
+            bbox_inches="tight",
+        )
 
 
 def plot_flipped_data_accuracy(
@@ -247,6 +312,7 @@ def plot_flipped_data_accuracy(
             x="method",
             y="flip_accuracy",
             hue="scorer",
+            saturation=1.0,
             palette={
                 "accuracy": "indianred",
                 "average_precision": "darkorchid",
@@ -254,6 +320,17 @@ def plot_flipped_data_accuracy(
             },
             ax=ax,
         )
+
+        for patch in ax.patches:
+            r, g, b, _ = patch.get_facecolor()
+            patch.set_facecolor((r, g, b, 0.5))
+
+        # Also fix the legend
+        for legpatch in ax.get_legend().get_patches():
+            r, g, b, _ = legpatch.get_facecolor()
+            legpatch.set_edgecolor("white")
+            legpatch.set_facecolor((r, g, b, 0.5))
+
         sns.move_legend(
             ax,
             "lower center",

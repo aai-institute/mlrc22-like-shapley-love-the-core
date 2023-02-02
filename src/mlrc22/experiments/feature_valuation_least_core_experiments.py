@@ -121,6 +121,7 @@ def run():
                         )
                         df = df[sorted(df.columns)]
                         df["fraction"] = fraction
+                        df["subsidy"] = values.subsidy
 
                         if all_values_df is None:
                             all_values_df = df.copy()

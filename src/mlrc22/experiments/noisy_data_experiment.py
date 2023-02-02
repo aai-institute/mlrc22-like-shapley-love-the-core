@@ -21,6 +21,7 @@ from mlrc22.plotting import (
     plot_clean_data_utility_percentage,
     plot_clean_data_vs_noisy_data_utility,
     plot_noisy_data_accuracy,
+    plot_values_histogram,
 )
 from mlrc22.utils import set_random_seed, setup_logger, setup_plotting
 
@@ -79,7 +80,7 @@ def run():
 
                 model = make_pipeline(
                     StandardScaler(),
-                    LogisticRegression(solver="liblinear"),
+                    LogisticRegression(solver="liblinear", n_jobs=1),
                 )
                 logger.info(f"Creating utility")
                 utility = Utility(
@@ -138,6 +139,8 @@ def run():
                     )
                     df = df[sorted(df.columns)]
                     df["method"] = method_name
+                    df["noise_level"] = noise_level
+                    df["noise_fraction"] = noise_fraction
 
                     if all_values_df is None:
                         all_values_df = df.copy()
@@ -190,6 +193,13 @@ def run():
         method_names=method_names,
         noise_fraction=noise_fraction,
         noise_levels=noise_levels,
+        experiment_output_dir=experiment_output_dir,
+    )
+
+    plot_values_histogram(
+        all_values_df,
+        hue_column="noise_level",
+        method_names=method_names,
         experiment_output_dir=experiment_output_dir,
     )
 

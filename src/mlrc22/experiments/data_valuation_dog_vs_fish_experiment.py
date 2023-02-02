@@ -31,9 +31,6 @@ set_random_seed(RANDOM_SEED)
 def run():
     logger.info("Starting Data Valuation - Dog vs Fish Experiment")
 
-    experiment_output_dir = OUTPUT_DIR / "data_valuation_dog_vs_fish"
-    experiment_output_dir.mkdir(exist_ok=True)
-
     parallel_config = ParallelConfig(backend="ray", logging_level=logging.ERROR)
 
     removal_percentages = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35]
@@ -45,12 +42,20 @@ def run():
         "Random",
     ]
 
-    budget_list = [10000, 50000]
+    budget_list = [5000, 10000]
+
+    experiment_output_dir = OUTPUT_DIR / "data_valuation_dog_vs_fish"
+    if len(budget_list) == 1:
+        experiment_output_dir = (
+            OUTPUT_DIR / f"data_valuation_dog_vs_fish_{budget_list[0]}"
+        )
+
+    experiment_output_dir.mkdir(exist_ok=True)
 
     n_repetitions = 10
     logger.info(f"Using number of repetitions {n_repetitions}")
 
-    n_jobs = 20
+    n_jobs = 8
     logger.info(f"Using number of jobs {n_jobs}")
 
     all_values_df = None
@@ -74,7 +79,7 @@ def run():
 
                     model = make_pipeline(
                         StandardScaler(),
-                        LogisticRegression(solver="liblinear"),
+                        LogisticRegression(solver="liblinear", n_jobs=1),
                     )
 
                     logger.info("Creating utility")
