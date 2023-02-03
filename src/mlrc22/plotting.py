@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, List, Optional, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,13 +21,13 @@ __all__ = [
 
 def shaded_mean_normal_confidence_interval(
     data: pd.DataFrame,
-    abscissa: Sequence[Any] | None = None,
-    mean_color: str | None = "dodgerblue",
-    shade_color: str | None = "lightblue",
-    title: str | None = None,
-    xlabel: str | None = None,
-    ylabel: str | None = None,
-    ax: Axes | None = None,
+    abscissa: Optional[Sequence[Any]] = None,
+    mean_color: Optional[str] = "dodgerblue",
+    shade_color: Optional[str] = "lightblue",
+    title: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    ax: Optional[Axes] = None,
     **kwargs,
 ) -> Axes:
     """Modified version of the `shaded_mean_std()` function defined in pyDVL."""
@@ -62,7 +62,7 @@ def shaded_mean_normal_confidence_interval(
 def plot_constraint_accuracy_over_coalitions(
     accuracies_df: pd.DataFrame,
     *,
-    scorer_names: list[str],
+    scorer_names: List[str],
     experiment_output_dir: Path,
     method_name: str,
     use_log_scale: bool = False,
@@ -117,8 +117,8 @@ def plot_constraint_accuracy_over_coalitions(
 def plot_clean_data_utility_percentage(
     results_df: pd.DataFrame,
     *,
-    method_names: list[str],
-    noise_levels: list[float],
+    method_names: List[str],
+    noise_levels: List[float],
     experiment_output_dir: Path,
 ) -> None:
     mean_colors = ["limegreen", "indianred", "dodgerblue"]
@@ -158,9 +158,9 @@ def plot_clean_data_utility_percentage(
 def plot_clean_data_vs_noisy_data_utility(
     results_df: pd.DataFrame,
     *,
-    method_names: list[str],
+    method_names: List[str],
     noise_fraction: float,
-    noise_levels: list[float],
+    noise_levels: List[float],
     experiment_output_dir: Path,
 ) -> None:
     mean_colors = ["limegreen", "indianred", "dodgerblue"]
@@ -256,7 +256,7 @@ def plot_noisy_data_accuracy(
 
 def plot_values_histogram(
     values_df: pd.DataFrame,
-    method_names: list[str],
+    method_names: List[str],
     hue_column: str,
     *,
     experiment_output_dir: Path,
@@ -302,7 +302,7 @@ def plot_values_histogram(
 def plot_flipped_data_accuracy(
     scores_df: pd.DataFrame,
     *,
-    label_flip_percentages: list[float],
+    label_flip_percentages: List[float],
     experiment_output_dir: Path,
 ) -> None:
     for flip_percentage in label_flip_percentages:
@@ -352,10 +352,10 @@ def plot_flipped_data_accuracy(
 def plot_flipped_utility_over_removal_percentages(
     scores_df: pd.DataFrame,
     *,
-    scorer_names: list[str],
-    label_flip_percentages: list[float],
-    method_names: list[str],
-    removal_percentages: list[float],
+    scorer_names: List[str],
+    label_flip_percentages: List[float],
+    method_names: List[str],
+    removal_percentages: List[float],
     experiment_output_dir: Path,
 ) -> None:
     mean_colors = ["darkorchid", "limegreen", "dodgerblue"]
@@ -401,9 +401,9 @@ def plot_flipped_utility_over_removal_percentages(
 def plot_utility_over_removal_percentages(
     scores_df: pd.DataFrame,
     *,
-    method_names: list[str],
-    budget_list: list[int],
-    removal_percentages: list[float],
+    method_names: List[str],
+    budget_list: List[int],
+    removal_percentages: List[float],
     experiment_output_dir: Path,
 ) -> None:
     mean_colors = ["dodgerblue", "darkorange", "limegreen", "indianred", "darkorchid"]
