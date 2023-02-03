@@ -1,6 +1,6 @@
 import os
 import tarfile
-from typing import Iterable
+from typing import Iterable, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -44,7 +44,7 @@ class FeatureValuationDataset(Dataset):
         self._indices = np.arange(self.x_train.shape[1])
         self._data_names = self._indices
 
-    def get_training_data(self, train_indices: Iterable[int] | None = None):
+    def get_training_data(self, train_indices: Optional[Iterable[int]] = None):
         if train_indices is None:
             x = self.x_train
         else:
@@ -52,7 +52,7 @@ class FeatureValuationDataset(Dataset):
         y = self.y_train
         return x, y
 
-    def get_test_data(self, test_indices: Iterable[int] | None = None):
+    def get_test_data(self, test_indices: Optional[Iterable[int]] = None):
         if test_indices is None:
             x = self.x_train
         else:
@@ -106,7 +106,7 @@ def create_synthetic_dataset(
     noise_level: float = 0.0,
     noise_fraction: float = 0.0,
     random_state: np.random.RandomState,
-) -> tuple[Dataset, NDArray[np.int_]]:
+) -> Tuple[Dataset, NDArray[np.int_]]:
     n_total_samples = n_train_samples + n_test_samples
     X = random_state.multivariate_normal(
         mean=np.zeros(n_features),
@@ -197,7 +197,7 @@ def create_house_voting_dataset(
 
 def create_enron_spam_datasets(
     flip_percentage: float = 0.2, *, random_state: np.random.RandomState
-) -> tuple[Dataset, Dataset, NDArray[np.int_]]:
+) -> Tuple[Dataset, Dataset, NDArray[np.int_]]:
     dataset_file = DATA_DIR / "enron1.tar.gz"
     dataset_dir = DATA_DIR / "enron1"
     # Download dataset file, if it does not exist already

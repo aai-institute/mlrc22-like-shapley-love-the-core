@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "mlrc22", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "~3.10"
+python = ">=3.9,<3.11"
 numpy = "^1.24.1"
 pandas = "^1.5.2"
 scikit-learn = "^1.2.0"

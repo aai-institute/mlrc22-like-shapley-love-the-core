@@ -1,6 +1,7 @@
 import logging
 import os
 import random
+from typing import Tuple
 
 import numpy as np
 import seaborn as sns
@@ -53,7 +54,7 @@ def setup_plotting():
 
 def flip_labels(
     y: NDArray[np.int_], percentage: float, *, random_state: np.random.RandomState
-) -> tuple[NDArray[np.int_], NDArray[np.int_]]:
+) -> Tuple[NDArray[np.int_], NDArray[np.int_]]:
     indices = random_state.choice(
         np.arange(len(y)), size=int(percentage * len(y)), replace=False
     )
@@ -97,7 +98,7 @@ def download_and_filter_imagenet(seed: int) -> DatasetDict:
 
 def generate_inception_v3_embeddings(
     ds: DatasetDict,
-) -> tuple[NDArray[np.float_], NDArray[np.float_]]:
+) -> Tuple[NDArray[np.float_], NDArray[np.float_]]:
     # Instantiate Inception V3 model with pretrained weights
     pretrained_weights = Inception_V3_Weights.IMAGENET1K_V1
     inception_model = inception_v3(weights=pretrained_weights)
