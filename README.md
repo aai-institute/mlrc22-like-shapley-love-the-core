@@ -60,6 +60,12 @@ You can find the results under [output/data_valuation_synthetic](output/data_val
 
 ### Dog vs Fish Dataset
 
+> **Note**:
+> This experiment requires downloading the [imagenet-1k](https://huggingface.co/datasets/imagenet-1k) dataset from
+> [HuggingFace Datasets](https://huggingface.co/datasets).
+> For that you need to first create an account and then login using
+> the [huggingface-cli](https://huggingface.co/docs/huggingface_hub/quick-start#login) tool.
+
 To reproduce the results of this experiment use:
 
 ```shell
