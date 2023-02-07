@@ -3,6 +3,7 @@ name = "ml-reproducibility-challenge-2022"
 version = "0.1.0"
 description = "Code for reproducing the experiments of 'If You Like Shapley Then You’ll Love the Core'"
 authors = ["Anonymous"]
+license = "LGPL-3.0"
 readme = "README.md"
 packages = [{include = "mlrc22", from = "src"}]
 
