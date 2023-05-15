@@ -1,4 +1,6 @@
-# ML-Reproducibility-Challenge-2022
+[![SWH](https://archive.softwareheritage.org/badge/origin/https://github.com/aai-institute/mlrc22-like-shapley-love-the-core/)](https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/aai-institute/mlrc22-like-shapley-love-the-core)
+
+# MLRC 2022: If you lik Shapley, then you'll love the core
 
 This repository contains code to reproduce the paper
 [`If You Like Shapley Then You’ll Love the Core`](http://procaccia.info/wp-content/uploads/2020/12/core.pdf)
